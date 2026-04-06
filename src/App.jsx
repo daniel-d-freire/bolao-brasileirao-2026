@@ -339,7 +339,18 @@ export default function App() {
 
   useEffect(() => {
     if (!player || isAdmin) return;
-    setDraftPreds(savedPreds[player.id] || SEED_PREDS[player.id] || {});
+    const hasSaved = Object.keys(savedPreds[player.id] || {}).length > 0;
+    if (hasSaved) {
+      // Usa palpites já salvos no Firebase
+      setDraftPreds(savedPreds[player.id]);
+    } else {
+      // Primeira vez: carrega seed da planilha E salva no Firebase automaticamente
+      const seed = SEED_PREDS[player.id] || {};
+      setDraftPreds(seed);
+      if (Object.keys(seed).length > 0) {
+        set(DB.preds(player.id), seed).catch(() => {});
+      }
+    }
     setSent(false);
   }, [player?.id]);
 
@@ -553,7 +564,9 @@ export default function App() {
               const pred = draftPreds[m.id] || {};
               const locked = isLocked(m);
               const hasResult = real.home!=null && real.home!=="";
-              const pts = hasResult ? calcPts(pred, real) : null;
+              // Para pts: usar savedPreds (Firebase) nos jogos com resultado, para consistência com ranking
+              const predForPts = hasResult ? (savedPreds[player?.id]?.[m.id] || pred) : pred;
+              const pts = hasResult ? calcPts(predForPts, real) : null;
               const ptColor = pts===25?G.success:pts>=15?"#3b82f6":pts>=10?G.warn:pts>0?G.danger:G.muted;
               return (
                 <div key={m.id} style={{ background:G.card, border:`1px solid ${hasResult&&pts!==null?ptColor+"55":G.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8 }}>
@@ -589,7 +602,7 @@ export default function App() {
                   {/* Footer */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8, paddingTop:6, borderTop:`1px solid ${G.border}33` }}>
                     <span style={{ fontSize:11, color:G.muted }}>
-                      {pred.home!=null&&pred.home!==""?`Palpite: ${pred.home}×${pred.away}`:locked?"🔒 Encerrado":"Sem palpite"}
+                      {predForPts.home!=null&&predForPts.home!==""?`Palpite: ${predForPts.home}×${predForPts.away}`:locked?"🔒 Encerrado":"Sem palpite"}
                     </span>
                     {pts!==null && (
                       <span style={{ fontWeight:800, fontSize:13, color:ptColor }}>
