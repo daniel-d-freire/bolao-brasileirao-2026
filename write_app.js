@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+const fs = require('fs');
+const content = `import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, get, onValue } from "firebase/database";
 
@@ -534,27 +535,27 @@ export default function App() {
     if (!user || user === ADMIN) return;
     const updated = { ...predictions, [matchId]: { homeScore: Number(home), awayScore: Number(away) } };
     setPredictions(updated);
-    await set(ref(db, `brasileirao2026/predictions/${user}/${matchId}`), { homeScore: Number(home), awayScore: Number(away) });
+    await set(ref(db, \`brasileirao2026/predictions/\${user}/\${matchId}\`), { homeScore: Number(home), awayScore: Number(away) });
   };
 
   const saveResult = async (matchId, home, away) => {
     if (user !== ADMIN) return;
     const updated = { ...results, [matchId]: { homeScore: Number(home), awayScore: Number(away) } };
     setResults(updated);
-    await set(ref(db, `brasileirao2026/results/${matchId}`), { homeScore: Number(home), awayScore: Number(away) });
+    await set(ref(db, \`brasileirao2026/results/\${matchId}\`), { homeScore: Number(home), awayScore: Number(away) });
   };
 
   const saveTableGuess = async (position, team) => {
     if (!user || user === ADMIN) return;
     const updated = { ...tableGuesses, [position]: team };
     setTableGuesses(updated);
-    await set(ref(db, `brasileirao2026/tableGuesses/${user}/${position}`), team);
+    await set(ref(db, \`brasileirao2026/tableGuesses/\${user}/\${position}\`), team);
   };
 
   const saveChampion = async (team) => {
     if (user !== ADMIN) return;
     setChampion(team);
-    await set(ref(db, `brasileirao2026/champion`), team);
+    await set(ref(db, \`brasileirao2026/champion\`), team);
   };
 
   // Calcular ranking
@@ -674,7 +675,7 @@ export default function App() {
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <div style={styles.headerTitle}>⚽ Bolão Brasileirão 2026</div>
-          <div style={styles.headerUser}>{user === ADMIN ? "👑 Admin" : `@${user}`}</div>
+          <div style={styles.headerUser}>{user === ADMIN ? "👑 Admin" : \`@\${user}\`}</div>
         </div>
         <button style={styles.btnLogout} onClick={handleLogout}>Sair</button>
       </div>
@@ -794,10 +795,10 @@ export default function App() {
                           <div key={p} style={{...styles.comparePlayer, background: pts===25?"#00c864":pts>=15?"#3b82f6":pts>=10?"#f59e0b":pts>0?"#6b7280":"#1a1a1a"}}>
                             <div style={{fontSize:11,color:"rgba(255,255,255,0.8)",textTransform:"capitalize"}}>{p}</div>
                             <div style={{fontWeight:700,color:"#fff",fontSize:13}}>
-                              {pred ? `${pred.homeScore}-${pred.awayScore}` : "-"}
+                              {pred ? \`\${pred.homeScore}-\${pred.awayScore}\` : "-"}
                             </div>
                             <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",fontWeight:600}}>
-                              {pts !== null ? `${pts}pts` : "-"}
+                              {pts !== null ? \`\${pts}pts\` : "-"}
                             </div>
                           </div>
                         );
@@ -906,17 +907,17 @@ export default function App() {
                     </span>
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <input type="number" min="0" max="20" style={styles.scoreInput}
-                        value={editingResult[`${match.id}_h`] ?? (real.homeScore ?? "")}
-                        onChange={e => setEditingResult(p => ({...p,[`${match.id}_h`]:e.target.value}))}
+                        value={editingResult[\`\${match.id}_h\`] ?? (real.homeScore ?? "")}
+                        onChange={e => setEditingResult(p => ({...p,[\`\${match.id}_h\`]:e.target.value}))}
                       />
                       <span style={{color:"#fff"}}>×</span>
                       <input type="number" min="0" max="20" style={styles.scoreInput}
-                        value={editingResult[`${match.id}_a`] ?? (real.awayScore ?? "")}
-                        onChange={e => setEditingResult(p => ({...p,[`${match.id}_a`]:e.target.value}))}
+                        value={editingResult[\`\${match.id}_a\`] ?? (real.awayScore ?? "")}
+                        onChange={e => setEditingResult(p => ({...p,[\`\${match.id}_a\`]:e.target.value}))}
                       />
                       <button style={styles.btnSave} onClick={() => {
-                        const h = editingResult[`${match.id}_h`] ?? real.homeScore;
-                        const a = editingResult[`${match.id}_a`] ?? real.awayScore;
+                        const h = editingResult[\`\${match.id}_h\`] ?? real.homeScore;
+                        const a = editingResult[\`\${match.id}_a\`] ?? real.awayScore;
                         if (h !== "" && h !== undefined && a !== "" && a !== undefined) {
                           saveResult(match.id, h, a);
                         }
@@ -960,7 +961,7 @@ function MatchCard({ match, real, userPred, locked, pts, isAdmin, onSavePred, on
   return (
     <div style={{
       ...styles.matchCard,
-      borderLeft: hasResult && pts !== null ? `3px solid ${ptColor}` : "3px solid #333",
+      borderLeft: hasResult && pts !== null ? \`3px solid \${ptColor}\` : "3px solid #333",
     }}>
       <div style={styles.matchDate}>{formatDate(match.date)}</div>
 
@@ -1033,10 +1034,10 @@ function MatchCard({ match, real, userPred, locked, pts, isAdmin, onSavePred, on
             const ppts = calcPoints(pred, real);
             const pColor = ppts === 25 ? "#00c864" : ppts >= 15 ? "#3b82f6" : ppts >= 10 ? "#f59e0b" : ppts > 0 ? "#ef4444" : "#333";
             return (
-              <div key={p} style={{...styles.miniPlayer, background: pColor + "22", border: `1px solid ${pColor}33`}}>
+              <div key={p} style={{...styles.miniPlayer, background: pColor + "22", border: \`1px solid \${pColor}33\`}}>
                 <span style={{color:"#aaa",fontSize:10,textTransform:"capitalize"}}>{p}</span>
                 <span style={{color:"#fff",fontSize:11,fontWeight:600}}>
-                  {pred ? `${pred.homeScore}-${pred.awayScore}` : "—"}
+                  {pred ? \`\${pred.homeScore}-\${pred.awayScore}\` : "—"}
                 </span>
               </div>
             );
@@ -1246,3 +1247,6 @@ const styles = {
     color: "#fff", padding: "6px 10px", cursor: "pointer", fontWeight: 700,
   },
 };
+`;
+fs.writeFileSync('C:\\Users\\User\\bolao-brasileirao-2026\\src\\App.jsx', content, 'utf8');
+console.log('WRITE_DONE: ' + content.split('\n').length + ' lines');
