@@ -498,7 +498,7 @@ export default function App() {
   // ── Tabs ──────────────────────────────────────────────────────────────────
   const tabs = isAdmin
     ? [{id:"admin",label:"⚙️ Admin"}]
-    : [{id:"jogos",label:"⚽ Jogos"},{id:"todos",label:"👁 Todos"},{id:"ranking",label:"🏆 Ranking"},{id:"stats",label:"📈 Stats"},{id:"infos",label:"ℹ️ Infos"}];
+    : [{id:"jogos",label:"⚽ Jogos"},{id:"todos",label:"👁 Todos"},{id:"ranking",label:"🏆 Ranking"},{id:"tabela",label:"📋 Tabela"},{id:"stats",label:"📈 Stats"},{id:"infos",label:"ℹ️ Infos"}];
 
   return (
     <div style={{ minHeight:"100vh", background:G.bg, fontFamily:"'Segoe UI',sans-serif", color:G.text, maxWidth:480, margin:"0 auto" }}>
@@ -696,6 +696,100 @@ export default function App() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ══ ABA TABELA FINAL ══ */}
+      {tab==="tabela" && (
+        <div style={{ padding:"12px 8px" }}>
+          <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.gold, marginBottom:6, letterSpacing:1 }}>📋 TABELA FINAL</div>
+          <div style={{ fontSize:12, color:G.muted, marginBottom:14 }}>Palpite a classificação completa · <strong style={{color:G.gold}}>10 pts</strong> por posição acertada · <strong style={{color:G.gold}}>100 pts</strong> pelo campeão</div>
+
+          {!isAdmin ? (
+            <div>
+              <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:16, marginBottom:14 }}>
+                <div style={{ fontSize:12, fontWeight:800, color:G.accent, marginBottom:12 }}>SEU PALPITE</div>
+                {TEAMS.map((_,i) => {
+                  const pos = i+1;
+                  const zone = pos<=4?"G4":pos<=6?"Libertadores":pos<=12?"Sul-Americana":pos>=17?"Rebaixamento":"";
+                  const zoneColor = pos<=4?G.success:pos<=6?"#22d3ee":pos<=12?G.muted:pos>=17?G.danger:G.muted;
+                  const zoneIcon = pos<=4?"🟢":pos<=6?"🔵":pos>=17?"🔴":"⚪";
+                  const saved = tableGuesses[player?.id]?.[pos];
+                  return (
+                    <div key={pos} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7 }}>
+                      <div style={{ minWidth:52, fontSize:12, fontWeight:800, color:zoneColor, background:zoneColor+"15", borderRadius:6, padding:"3px 7px", textAlign:"center", flexShrink:0 }}>
+                        {zoneIcon} {pos}º
+                      </div>
+                      <select
+                        value={tableGuesses[player?.id]?.[pos] || ""}
+                        onChange={async e => {
+                          const v = e.target.value;
+                          const updated = { ...(tableGuesses[player?.id]||{}), [pos]: v };
+                          setTableGuesses(prev => ({ ...prev, [player.id]: updated }));
+                          await set(DB.tableGuesses(player.id), updated);
+                        }}
+                        style={{ flex:1, padding:"7px 10px", background:saved?G.card2+"cc":G.card2, border:`1px solid ${saved?G.accent+"55":G.border}`, color:saved?G.text:G.muted, borderRadius:8, fontSize:13, cursor:"pointer", outline:"none" }}>
+                        <option value="">-- Escolha o time --</option>
+                        {TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  );
+                })}
+                <div style={{ marginTop:14, fontSize:11, color:G.muted }}>✅ Salvamento automático ao selecionar cada posição</div>
+              </div>
+            </div>
+          ) : (
+            /* Admin: ver palpites de todos */
+            <div>
+              <div style={{ background:G.card, border:`1px solid ${G.gold}33`, borderRadius:14, padding:16, marginBottom:14 }}>
+                <div style={{ fontSize:12, fontWeight:800, color:G.gold, marginBottom:14 }}>PALPITES DE TODOS OS JOGADORES</div>
+                <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:8, borderBottom:`1px solid ${G.border}`, marginBottom:12 }}>
+                  <div style={{ minWidth:44, fontSize:11, fontWeight:800, color:G.muted }}>Pos</div>
+                  {PLAYERS.map(p => (
+                    <div key={p.id} style={{ minWidth:72, fontSize:11, fontWeight:800, color:G.muted, textAlign:"center" }}>{p.name}</div>
+                  ))}
+                </div>
+                {TEAMS.map((_,i) => {
+                  const pos = i+1;
+                  const zoneColor = pos<=4?G.success:pos>=17?G.danger:G.muted;
+                  return (
+                    <div key={pos} style={{ display:"flex", gap:6, alignItems:"center", padding:"4px 0", borderBottom:`1px solid ${G.border}22` }}>
+                      <div style={{ minWidth:44, fontSize:11, fontWeight:800, color:zoneColor }}>{pos}º</div>
+                      {PLAYERS.map(p => {
+                        const guess = tableGuesses[p.id]?.[pos];
+                        return (
+                          <div key={p.id} style={{ minWidth:72, fontSize:11, textAlign:"center", color:guess?G.text:G.muted, background:guess?G.card2:"transparent", borderRadius:5, padding:"2px 4px" }}>
+                            {guess || "—"}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Scores de tabela (quando campeão definido) */}
+          {champion && (
+            <div style={{ background:G.card, border:`1px solid ${G.gold}44`, borderRadius:14, padding:16 }}>
+              <div style={{ fontSize:12, fontWeight:800, color:G.gold, marginBottom:12 }}>🏆 PALPITES DE CAMPEÃO</div>
+              {PLAYERS.map(p => {
+                const guess = tableGuesses[p.id]?.[1];
+                const hit = guess===champion;
+                return (
+                  <div key={p.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:`1px solid ${G.border}22` }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:p.id===player?.id?G.accent:G.text }}>{p.name}</span>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <span style={{ fontSize:12, color:hit?G.gold:G.muted }}>{guess||"—"}</span>
+                      {hit && <span style={{ fontSize:12, fontWeight:800, color:G.gold }}>+100pts 🏆</span>}
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ marginTop:10, fontSize:12, color:G.muted }}>Campeão definido: <strong style={{color:G.gold}}>{champion}</strong></div>
+            </div>
+          )}
         </div>
       )}
 
