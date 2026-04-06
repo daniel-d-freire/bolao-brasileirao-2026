@@ -1,804 +1,665 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, get, onValue } from "firebase/database";
+import { getDatabase, ref, onValue, set } from "firebase/database";
 
-// ─── Firebase Config ────────────────────────────────────────────────────────
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const PLAYERS = [
+  { id:"tico",      name:"TICO"      },
+  { id:"pedro",     name:"PEDRO IVO" },
+  { id:"luquinhas", name:"LUQUINHAS" },
+  { id:"lazaro",    name:"LAZARO"    },
+  { id:"vini",      name:"VINI"      },
+  { id:"dane",      name:"DANE"      },
+  { id:"alex",      name:"ALEX"      },
+];
+const PASSWORDS = { tico:"4821", pedro:"7364", luquinhas:"2957", lazaro:"6138", vini:"5042", dane:"8716", alex:"3489" };
+const ADMIN_PASS = "2026";
+const ALL_IDS = PLAYERS.map(p => p.id);
+
+// ─── FIREBASE ─────────────────────────────────────────────────────────────────
 const firebaseConfig = {
-  apiKey: "AIzaSyD4t2feH3RN949T9K3XLnVThUKRrCsfOPw",
-  authDomain: "bolao-brasileirao-2026-51b74.firebaseapp.com",
-  databaseURL: "https://bolao-brasileirao-2026-51b74-default-rtdb.firebaseio.com",
-  projectId: "bolao-brasileirao-2026-51b74",
-  storageBucket: "bolao-brasileirao-2026-51b74.firebasestorage.app",
-  messagingSenderId: "571312996480",
-  appId: "1:571312996480:web:14f6e7c0502577707c6665"
+  apiKey:"AIzaSyD4t2feH3RN949T9K3XLnVThUKRrCsfOPw",
+  authDomain:"bolao-brasileirao-2026-51b74.firebaseapp.com",
+  databaseURL:"https://bolao-brasileirao-2026-51b74-default-rtdb.firebaseio.com",
+  projectId:"bolao-brasileirao-2026-51b74",
+  storageBucket:"bolao-brasileirao-2026-51b74.firebasestorage.app",
+  messagingSenderId:"571312996480",
+  appId:"1:571312996480:web:14f6e7c0502577707c6665"
 };
-
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
-
-// ─── Resultados Reais (Rodadas 1-9) ─────────────────────────────────────────
-const KNOWN_RESULTS = {
-  1:{homeScore:2,awayScore:1},2:{homeScore:4,awayScore:0},3:{homeScore:2,awayScore:1},
-  4:{homeScore:1,awayScore:2},5:{homeScore:0,awayScore:0},6:{homeScore:2,awayScore:2},
-  7:{homeScore:0,awayScore:1},8:{homeScore:0,awayScore:1},9:{homeScore:2,awayScore:0},
-  10:{homeScore:4,awayScore:2},
-  11:{homeScore:1,awayScore:1},12:{homeScore:1,awayScore:1},13:{homeScore:1,awayScore:1},
-  14:{homeScore:5,awayScore:1},15:{homeScore:1,awayScore:1},16:{homeScore:1,awayScore:2},
-  17:{homeScore:5,awayScore:3},18:{homeScore:1,awayScore:1},19:{homeScore:1,awayScore:1},
-  20:{homeScore:1,awayScore:1},
-  21:{homeScore:1,awayScore:1},22:{homeScore:1,awayScore:1},23:{homeScore:1,awayScore:1},
-  24:{homeScore:1,awayScore:1},25:{homeScore:1,awayScore:0},26:{homeScore:2,awayScore:0},
-  27:{homeScore:1,awayScore:1},28:{homeScore:1,awayScore:1},29:{homeScore:1,awayScore:1},
-  30:{homeScore:1,awayScore:1},
-  31:{homeScore:2,awayScore:0},32:{homeScore:2,awayScore:1},33:{homeScore:1,awayScore:1},
-  34:{homeScore:2,awayScore:1},35:{homeScore:1,awayScore:1},36:{homeScore:1,awayScore:1},
-  37:{homeScore:1,awayScore:1},38:{homeScore:1,awayScore:1},39:{homeScore:1,awayScore:1},
-  40:{homeScore:1,awayScore:2},
-  41:{homeScore:1,awayScore:1},42:{homeScore:1,awayScore:1},43:{homeScore:1,awayScore:0},
-  44:{homeScore:1,awayScore:1},45:{homeScore:1,awayScore:1},46:{homeScore:1,awayScore:1},
-  47:{homeScore:1,awayScore:1},48:{homeScore:4,awayScore:1},49:{homeScore:1,awayScore:1},
-  50:{homeScore:1,awayScore:2},
-  51:{homeScore:1,awayScore:1},52:{homeScore:0,awayScore:3},53:{homeScore:1,awayScore:1},
-  54:{homeScore:2,awayScore:0},55:{homeScore:1,awayScore:1},56:{homeScore:1,awayScore:1},
-  57:{homeScore:2,awayScore:0},58:{homeScore:2,awayScore:0},59:{homeScore:1,awayScore:1},
-  60:{homeScore:1,awayScore:1},
-  61:{homeScore:3,awayScore:0},62:{homeScore:3,awayScore:2},63:{homeScore:1,awayScore:2},
-  64:{homeScore:2,awayScore:1},65:{homeScore:0,awayScore:1},66:{homeScore:1,awayScore:0},
-  67:{homeScore:2,awayScore:0},68:{homeScore:2,awayScore:1},69:{homeScore:2,awayScore:0},
-  70:{homeScore:0,awayScore:0},
-  71:{homeScore:1,awayScore:0},72:{homeScore:2,awayScore:1},73:{homeScore:0,awayScore:1},
-  74:{homeScore:1,awayScore:1},75:{homeScore:1,awayScore:2},76:{homeScore:0,awayScore:0},
-  77:{homeScore:2,awayScore:0},78:{homeScore:2,awayScore:0},79:{homeScore:1,awayScore:0},
-  80:{homeScore:4,awayScore:1},
-  81:{homeScore:3,awayScore:1},82:{homeScore:3,awayScore:2},83:{homeScore:2,awayScore:0},
-  84:{homeScore:2,awayScore:1},85:{homeScore:3,awayScore:0},86:{homeScore:3,awayScore:0},
-  87:{homeScore:1,awayScore:1},88:{homeScore:1,awayScore:1},89:{homeScore:3,awayScore:0},
-  90:{homeScore:0,awayScore:4},
+const DB = {
+  preds:    (pid) => ref(db, `preds/${pid}`),
+  results:  ()    => ref(db, `results`),
+  payments: ()    => ref(db, `payments`),
+  champion: ()    => ref(db, `champion`),
+  tableGuesses: (pid) => ref(db, `tableGuesses/${pid}`),
 };
 
-// ─── Palpites iniciais (da planilha) ─────────────────────────────────────────
-const KNOWN_PREDICTIONS = {
-  tico: {
-    1:{homeScore:2,awayScore:1},2:{homeScore:1,awayScore:0},3:{homeScore:1,awayScore:3},4:{homeScore:1,awayScore:0},5:{homeScore:1,awayScore:0},
-    6:{homeScore:1,awayScore:0},7:{homeScore:2,awayScore:1},8:{homeScore:1,awayScore:1},9:{homeScore:0,awayScore:0},10:{homeScore:1,awayScore:0},
-    11:{homeScore:2,awayScore:0},12:{homeScore:2,awayScore:0},13:{homeScore:1,awayScore:0},14:{homeScore:2,awayScore:0},15:{homeScore:1,awayScore:0},
-    16:{homeScore:1,awayScore:0},17:{homeScore:1,awayScore:0},18:{homeScore:2,awayScore:1},19:{homeScore:1,awayScore:0},20:{homeScore:0,awayScore:1},
-    21:{homeScore:1,awayScore:1},22:{homeScore:1,awayScore:2},23:{homeScore:2,awayScore:1},24:{homeScore:1,awayScore:0},25:{homeScore:1,awayScore:0},
-    26:{homeScore:2,awayScore:0},27:{homeScore:1,awayScore:0},28:{homeScore:2,awayScore:1},29:{homeScore:1,awayScore:4},30:{homeScore:1,awayScore:0},
-    31:{homeScore:2,awayScore:0},32:{homeScore:2,awayScore:0},33:{homeScore:0,awayScore:0},34:{homeScore:1,awayScore:0},35:{homeScore:1,awayScore:0},
-    36:{homeScore:1,awayScore:0},37:{homeScore:1,awayScore:0},38:{homeScore:1,awayScore:0},
-  },
-  pedro: {
-    1:{homeScore:1,awayScore:2},2:{homeScore:1,awayScore:2},3:{homeScore:1,awayScore:3},4:{homeScore:2,awayScore:0},5:{homeScore:1,awayScore:2},
-    6:{homeScore:1,awayScore:2},7:{homeScore:2,awayScore:1},8:{homeScore:1,awayScore:2},9:{homeScore:1,awayScore:2},10:{homeScore:0,awayScore:2},
-    11:{homeScore:3,awayScore:1},12:{homeScore:2,awayScore:0},13:{homeScore:2,awayScore:1},14:{homeScore:3,awayScore:1},15:{homeScore:2,awayScore:3},
-    16:{homeScore:2,awayScore:1},17:{homeScore:2,awayScore:1},18:{homeScore:1,awayScore:2},19:{homeScore:1,awayScore:2},20:{homeScore:2,awayScore:1},
-    21:{homeScore:2,awayScore:1},22:{homeScore:2,awayScore:2},23:{homeScore:1,awayScore:2},24:{homeScore:2,awayScore:0},25:{homeScore:1,awayScore:0},
-    26:{homeScore:2,awayScore:1},27:{homeScore:1,awayScore:1},28:{homeScore:2,awayScore:1},29:{homeScore:1,awayScore:3},30:{homeScore:2,awayScore:1},
-    31:{homeScore:3,awayScore:1},32:{homeScore:2,awayScore:1},33:{homeScore:1,awayScore:2},34:{homeScore:1,awayScore:2},35:{homeScore:1,awayScore:2},
-    36:{homeScore:1,awayScore:2},37:{homeScore:2,awayScore:1},38:{homeScore:1,awayScore:2},
-  },
-  luquinhas: {
-    1:{homeScore:1,awayScore:0},2:{homeScore:2,awayScore:1},3:{homeScore:0,awayScore:2},4:{homeScore:2,awayScore:1},5:{homeScore:3,awayScore:0},
-    6:{homeScore:2,awayScore:1},7:{homeScore:0,awayScore:1},8:{homeScore:0,awayScore:0},9:{homeScore:0,awayScore:1},10:{homeScore:1,awayScore:1},
-    11:{homeScore:2,awayScore:0},12:{homeScore:2,awayScore:0},13:{homeScore:0,awayScore:2},14:{homeScore:3,awayScore:1},15:{homeScore:1,awayScore:1},
-    16:{homeScore:2,awayScore:0},17:{homeScore:1,awayScore:2},18:{homeScore:1,awayScore:1},19:{homeScore:1,awayScore:0},20:{homeScore:0,awayScore:2},
-    21:{homeScore:1,awayScore:2},22:{homeScore:2,awayScore:0},23:{homeScore:1,awayScore:1},24:{homeScore:1,awayScore:1},25:{homeScore:1,awayScore:0},
-    26:{homeScore:2,awayScore:0},27:{homeScore:0,awayScore:1},28:{homeScore:3,awayScore:1},29:{homeScore:0,awayScore:1},30:{homeScore:0,awayScore:1},
-    31:{homeScore:2,awayScore:1},32:{homeScore:3,awayScore:1},33:{homeScore:2,awayScore:0},34:{homeScore:3,awayScore:1},35:{homeScore:0,awayScore:1},
-    36:{homeScore:1,awayScore:1},37:{homeScore:2,awayScore:1},38:{homeScore:2,awayScore:1},
-  },
-  lazaro: {
-    1:{homeScore:2,awayScore:0},2:{homeScore:1,awayScore:2},3:{homeScore:1,awayScore:2},4:{homeScore:2,awayScore:0},5:{homeScore:1,awayScore:2},
-    6:{homeScore:1,awayScore:2},7:{homeScore:1,awayScore:1},8:{homeScore:2,awayScore:1},9:{homeScore:2,awayScore:0},10:{homeScore:1,awayScore:2},
-    11:{homeScore:2,awayScore:0},12:{homeScore:3,awayScore:0},13:{homeScore:3,awayScore:0},14:{homeScore:3,awayScore:0},15:{homeScore:2,awayScore:1},
-    16:{homeScore:3,awayScore:0},17:{homeScore:2,awayScore:1},18:{homeScore:2,awayScore:0},19:{homeScore:2,awayScore:1},20:{homeScore:0,awayScore:1},
-    21:{homeScore:1,awayScore:0},22:{homeScore:1,awayScore:2},23:{homeScore:1,awayScore:0},24:{homeScore:2,awayScore:0},25:{homeScore:1,awayScore:0},
-    26:{homeScore:3,awayScore:1},27:{homeScore:1,awayScore:2},28:{homeScore:2,awayScore:0},29:{homeScore:1,awayScore:3},30:{homeScore:2,awayScore:0},
-    31:{homeScore:2,awayScore:0},32:{homeScore:2,awayScore:1},33:{homeScore:2,awayScore:1},34:{homeScore:2,awayScore:1},35:{homeScore:2,awayScore:1},
-    36:{homeScore:1,awayScore:2},37:{homeScore:2,awayScore:0},38:{homeScore:2,awayScore:1},
-  },
-  vini: {
-    1:{homeScore:2,awayScore:2},2:{homeScore:2,awayScore:1},3:{homeScore:0,awayScore:3},4:{homeScore:0,awayScore:0},5:{homeScore:0,awayScore:1},
-    6:{homeScore:1,awayScore:1},7:{homeScore:2,awayScore:0},8:{homeScore:1,awayScore:1},9:{homeScore:0,awayScore:0},10:{homeScore:0,awayScore:1},
-    11:{homeScore:2,awayScore:0},12:{homeScore:3,awayScore:1},13:{homeScore:2,awayScore:1},14:{homeScore:3,awayScore:0},15:{homeScore:1,awayScore:1},
-    16:{homeScore:2,awayScore:1},17:{homeScore:2,awayScore:1},18:{homeScore:1,awayScore:0},19:{homeScore:2,awayScore:2},20:{homeScore:1,awayScore:1},
-    21:{homeScore:2,awayScore:1},22:{homeScore:1,awayScore:0},23:{homeScore:2,awayScore:2},24:{homeScore:2,awayScore:1},25:{homeScore:1,awayScore:1},
-    26:{homeScore:2,awayScore:0},27:{homeScore:0,awayScore:0},28:{homeScore:1,awayScore:1},29:{homeScore:0,awayScore:2},30:{homeScore:0,awayScore:1},
-    31:{homeScore:2,awayScore:0},32:{homeScore:3,awayScore:0},33:{homeScore:2,awayScore:0},34:{homeScore:3,awayScore:1},35:{homeScore:2,awayScore:2},
-    36:{homeScore:2,awayScore:2},37:{homeScore:2,awayScore:1},38:{homeScore:1,awayScore:1},
-  },
-  dane: {
-    1:{homeScore:1,awayScore:0},2:{homeScore:1,awayScore:2},3:{homeScore:1,awayScore:2},4:{homeScore:1,awayScore:0},5:{homeScore:2,awayScore:1},
-    6:{homeScore:1,awayScore:1},7:{homeScore:1,awayScore:0},8:{homeScore:2,awayScore:1},9:{homeScore:1,awayScore:0},10:{homeScore:1,awayScore:1},
-    11:{homeScore:2,awayScore:0},12:{homeScore:1,awayScore:0},13:{homeScore:1,awayScore:1},14:{homeScore:2,awayScore:0},15:{homeScore:2,awayScore:1},
-    16:{homeScore:2,awayScore:0},17:{homeScore:1,awayScore:1},18:{homeScore:1,awayScore:0},19:{homeScore:2,awayScore:1},20:{homeScore:0,awayScore:1},
-    21:{homeScore:1,awayScore:1},22:{homeScore:0,awayScore:1},23:{homeScore:2,awayScore:1},24:{homeScore:1,awayScore:0},25:{homeScore:1,awayScore:1},
-    26:{homeScore:2,awayScore:0},27:{homeScore:0,awayScore:1},28:{homeScore:1,awayScore:0},29:{homeScore:1,awayScore:2},30:{homeScore:0,awayScore:0},
-    31:{homeScore:2,awayScore:0},32:{homeScore:2,awayScore:0},33:{homeScore:1,awayScore:0},34:{homeScore:2,awayScore:1},35:{homeScore:1,awayScore:0},
-    36:{homeScore:1,awayScore:0},37:{homeScore:1,awayScore:1},38:{homeScore:1,awayScore:2},
-  },
-  alex: {
-    1:{homeScore:2,awayScore:0},2:{homeScore:0,awayScore:1},3:{homeScore:0,awayScore:2},4:{homeScore:2,awayScore:0},5:{homeScore:1,awayScore:0},
-    6:{homeScore:1,awayScore:1},7:{homeScore:1,awayScore:0},8:{homeScore:1,awayScore:1},9:{homeScore:1,awayScore:0},10:{homeScore:0,awayScore:1},
-    11:{homeScore:3,awayScore:0},12:{homeScore:1,awayScore:0},13:{homeScore:1,awayScore:0},14:{homeScore:2,awayScore:1},15:{homeScore:1,awayScore:1},
-    16:{homeScore:3,awayScore:0},17:{homeScore:1,awayScore:0},18:{homeScore:0,awayScore:0},19:{homeScore:0,awayScore:1},20:{homeScore:0,awayScore:2},
-    21:{homeScore:2,awayScore:0},22:{homeScore:2,awayScore:1},23:{homeScore:1,awayScore:0},24:{homeScore:1,awayScore:2},25:{homeScore:1,awayScore:1},
-    26:{homeScore:3,awayScore:1},27:{homeScore:1,awayScore:1},28:{homeScore:0,awayScore:1},29:{homeScore:0,awayScore:3},30:{homeScore:1,awayScore:2},
-    31:{homeScore:1,awayScore:0},32:{homeScore:1,awayScore:0},33:{homeScore:1,awayScore:1},34:{homeScore:1,awayScore:1},35:{homeScore:2,awayScore:0},
-    36:{homeScore:2,awayScore:1},37:{homeScore:0,awayScore:1},38:{homeScore:1,awayScore:2},
-  },
+// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
+const G = {
+  bg:"#0a0e1a", card:"#111827", card2:"#1a2235", border:"#1e2d45",
+  accent:"#00d4aa", accent2:"#ff6b35",
+  gold:"#ffd700", silver:"#c0c0c0", bronze:"#cd7f32",
+  text:"#e2e8f0", muted:"#64748b",
+  danger:"#ef4444", success:"#22c55e", warn:"#f59e0b",
 };
 
-
-// ─── Credenciais ─────────────────────────────────────────────────────────────
-const CREDENTIALS = {
-  tico: "4821", pedro: "7364", luquinhas: "2957",
-  lazaro: "6138", vini: "5042", dane: "8716",
-  alex: "3489", admin: "2026"
-};
-const PLAYERS = ["tico", "pedro", "luquinhas", "lazaro", "vini", "dane", "alex"];
-const ADMIN = "admin";
-
-// ─── Times do Brasileirão 2026 ───────────────────────────────────────────────
+// ─── TIMES ───────────────────────────────────────────────────────────────────
 const TEAMS = [
-  "Flamengo", "Palmeiras", "São Paulo", "Corinthians", "Fluminense",
-  "Botafogo", "Atlético-MG", "Grêmio", "Internacional", "Santos",
-  "Vasco", "Cruzeiro", "Athletico-PR", "Bahia", "Red Bull Bragantino",
-  "Coritiba", "Mirassol", "Vitória", "Chapecoense", "Remo"
+  "Flamengo","Palmeiras","São Paulo","Corinthians","Fluminense",
+  "Botafogo","Atlético-MG","Grêmio","Internacional","Santos",
+  "Vasco","Cruzeiro","Athletico-PR","Bahia","Red Bull Bragantino",
+  "Coritiba","Mirassol","Vitória","Chapecoense","Remo"
 ];
-
-// Cores dos times
 const TEAM_COLORS = {
-  "Flamengo": "#E8002D", "Palmeiras": "#006B3F", "São Paulo": "#CC0000",
-  "Corinthians": "#000000", "Fluminense": "#6B0F1A", "Botafogo": "#000000",
-  "Atlético-MG": "#000000", "Grêmio": "#0060AF", "Internacional": "#CC0000",
-  "Santos": "#000000", "Vasco": "#000000", "Cruzeiro": "#003DA5",
-  "Athletico-PR": "#CC0000", "Bahia": "#0044AA", "Red Bull Bragantino": "#CC0000",
-  "Coritiba": "#006400", "Mirassol": "#FFD700", "Vitória": "#CC0000",
-  "Chapecoense": "#007A33", "Remo": "#003087"
+  "Flamengo":"#E8002D","Palmeiras":"#006B3F","São Paulo":"#CC0000",
+  "Corinthians":"#444","Fluminense":"#6B0F1A","Botafogo":"#444",
+  "Atlético-MG":"#444","Grêmio":"#0060AF","Internacional":"#CC0000",
+  "Santos":"#444","Vasco":"#444","Cruzeiro":"#003DA5",
+  "Athletico-PR":"#CC0000","Bahia":"#0044AA","Red Bull Bragantino":"#CC0000",
+  "Coritiba":"#006400","Mirassol":"#DAA520","Vitória":"#CC0000",
+  "Chapecoense":"#007A33","Remo":"#003087"
 };
+const teamDot = (t) => ({ width:8, height:8, borderRadius:"50%", flexShrink:0, background:TEAM_COLORS[t]||"#555" });
 
-// ─── 380 Jogos das 38 Rodadas ────────────────────────────────────────────────
-const generateMatches = () => {
-  const rawMatches = [
-    // RODADA 1 (28-29/01)
-    [1,"Fluminense","Grêmio","2026-01-29"],[1,"Botafogo","Cruzeiro","2026-01-29"],
-    [1,"São Paulo","Flamengo","2026-01-28"],[1,"Corinthians","Bahia","2026-01-29"],
-    [1,"Mirassol","Vasco","2026-01-29"],[1,"Atlético-MG","Palmeiras","2026-01-28"],
-    [1,"Internacional","Athletico-PR","2026-01-29"],[1,"Coritiba","Red Bull Bragantino","2026-01-29"],
-    [1,"Vitória","Remo","2026-01-29"],[1,"Chapecoense","Santos","2026-01-29"],
-    // RODADA 2 (04-05/02)
-    [2,"Flamengo","Internacional","2026-02-04"],[2,"Vasco","Chapecoense","2026-02-05"],
-    [2,"Santos","São Paulo","2026-02-04"],[2,"Palmeiras","Vitória","2026-02-04"],
-    [2,"Red Bull Bragantino","Atlético-MG","2026-02-05"],[2,"Cruzeiro","Coritiba","2026-02-04"],
-    [2,"Grêmio","Botafogo","2026-02-04"],[2,"Athletico-PR","Corinthians","2026-02-05"],
-    [2,"Bahia","Fluminense","2026-02-05"],[2,"Remo","Mirassol","2026-02-05"],
-    // RODADA 3 (11-12/02)
-    [3,"Fluminense","Botafogo","2026-02-11"],[3,"Vasco","Bahia","2026-02-12"],
-    [3,"São Paulo","Grêmio","2026-02-11"],[3,"Corinthians","Red Bull Bragantino","2026-02-12"],
-    [3,"Mirassol","Cruzeiro","2026-02-11"],[3,"Atlético-MG","Remo","2026-02-12"],
-    [3,"Internacional","Palmeiras","2026-02-11"],[3,"Athletico-PR","Santos","2026-02-12"],
-    [3,"Vitória","Flamengo","2026-02-11"],[3,"Chapecoense","Coritiba","2026-02-12"],
-    // RODADA 4 (25-26/02)
-    [4,"Flamengo","Mirassol","2026-02-25"],[4,"Botafogo","Vitória","2026-02-25"],
-    [4,"Santos","Vasco","2026-02-25"],[4,"Palmeiras","Fluminense","2026-02-25"],
-    [4,"Red Bull Bragantino","Athletico-PR","2026-02-25"],[4,"Cruzeiro","Corinthians","2026-02-25"],
-    [4,"Grêmio","Atlético-MG","2026-02-26"],[4,"Coritiba","São Paulo","2026-02-26"],
-    [4,"Bahia","Chapecoense","2026-02-26"],[4,"Remo","Internacional","2026-02-26"],
-    // RODADA 5 (11-12/03)
-    [5,"Flamengo","Cruzeiro","2026-03-11"],[5,"Vasco","Palmeiras","2026-03-12"],
-    [5,"São Paulo","Chapecoense","2026-03-11"],[5,"Corinthians","Coritiba","2026-03-12"],
-    [5,"Mirassol","Santos","2026-03-11"],[5,"Atlético-MG","Internacional","2026-03-11"],
-    [5,"Grêmio","Red Bull Bragantino","2026-03-12"],[5,"Athletico-PR","Botafogo","2026-03-12"],
-    [5,"Bahia","Vitória","2026-03-11"],[5,"Remo","Fluminense","2026-03-12"],
-    // RODADA 6 (14-16/03)
-    [6,"Fluminense","Athletico-PR","2026-03-14"],[6,"Botafogo","Flamengo","2026-03-15"],
-    [6,"Santos","Corinthians","2026-03-14"],[6,"Palmeiras","Mirassol","2026-03-14"],
-    [6,"Red Bull Bragantino","São Paulo","2026-03-14"],[6,"Cruzeiro","Vasco","2026-03-15"],
-    [6,"Internacional","Bahia","2026-03-15"],[6,"Coritiba","Remo","2026-03-14"],
-    [6,"Vitória","Atlético-MG","2026-03-15"],[6,"Chapecoense","Grêmio","2026-03-15"],
-    // RODADA 7 (18-19/03)
-    [7,"Flamengo","Remo","2026-03-18"],[7,"Vasco","Fluminense","2026-03-19"],
-    [7,"Santos","Internacional","2026-03-18"],[7,"Palmeiras","Botafogo","2026-03-18"],
-    [7,"Mirassol","Coritiba","2026-03-18"],[7,"Atlético-MG","São Paulo","2026-03-19"],
-    [7,"Grêmio","Vitória","2026-03-19"],[7,"Athletico-PR","Cruzeiro","2026-03-18"],
-    [7,"Bahia","Red Bull Bragantino","2026-03-19"],[7,"Chapecoense","Corinthians","2026-03-18"],
-    // RODADA 8 (21-23/03)
-    [8,"Fluminense","Atlético-MG","2026-03-21"],[8,"Vasco","Grêmio","2026-03-22"],
-    [8,"São Paulo","Palmeiras","2026-03-21"],[8,"Corinthians","Flamengo","2026-03-22"],
-    [8,"Red Bull Bragantino","Botafogo","2026-03-21"],[8,"Cruzeiro","Santos","2026-03-22"],
-    [8,"Internacional","Chapecoense","2026-03-21"],[8,"Athletico-PR","Coritiba","2026-03-22"],
-    [8,"Vitória","Mirassol","2026-03-22"],[8,"Remo","Bahia","2026-03-21"],
-    // RODADA 9 (01-02/04)
-    [9,"Fluminense","Corinthians","2026-04-01"],[9,"Botafogo","Mirassol","2026-04-01"],
-    [9,"Santos","Remo","2026-04-02"],[9,"Palmeiras","Grêmio","2026-04-01"],
-    [9,"Red Bull Bragantino","Flamengo","2026-04-01"],[9,"Cruzeiro","Vitória","2026-04-02"],
-    [9,"Internacional","São Paulo","2026-04-01"],[9,"Coritiba","Vasco","2026-04-02"],
-    [9,"Bahia","Athletico-PR","2026-04-02"],[9,"Chapecoense","Atlético-MG","2026-04-01"],
-    // RODADA 10 (04-06/04)
-    [10,"Flamengo","Santos","2026-04-05"],[10,"Vasco","Botafogo","2026-04-05"],
-    [10,"São Paulo","Cruzeiro","2026-04-05"],[10,"Corinthians","Internacional","2026-04-05"],
-    [10,"Mirassol","Red Bull Bragantino","2026-04-05"],[10,"Atlético-MG","Athletico-PR","2026-04-05"],
-    [10,"Grêmio","Remo","2026-04-05"],[10,"Coritiba","Fluminense","2026-04-06"],
-    [10,"Bahia","Palmeiras","2026-04-05"],[10,"Chapecoense","Vitória","2026-04-05"],
-    // RODADA 11 (11-13/04)
-    [11,"Fluminense","Flamengo","2026-04-11"],[11,"Botafogo","Coritiba","2026-04-12"],
-    [11,"Santos","Atlético-MG","2026-04-11"],[11,"Corinthians","Palmeiras","2026-04-12"],
-    [11,"Mirassol","Bahia","2026-04-11"],[11,"Cruzeiro","Red Bull Bragantino","2026-04-12"],
-    [11,"Internacional","Grêmio","2026-04-12"],[11,"Athletico-PR","Chapecoense","2026-04-11"],
-    [11,"Vitória","São Paulo","2026-04-11"],[11,"Remo","Vasco","2026-04-12"],
-    // RODADA 12 (18-20/04)
-    [12,"Flamengo","Bahia","2026-04-18"],[12,"Vasco","São Paulo","2026-04-19"],
-    [12,"Santos","Fluminense","2026-04-18"],[12,"Palmeiras","Athletico-PR","2026-04-19"],
-    [12,"Red Bull Bragantino","Remo","2026-04-18"],[12,"Cruzeiro","Grêmio","2026-04-18"],
-    [12,"Internacional","Mirassol","2026-04-19"],[12,"Coritiba","Atlético-MG","2026-04-19"],
-    [12,"Vitória","Corinthians","2026-04-18"],[12,"Chapecoense","Botafogo","2026-04-20"],
-    // RODADA 13 (25-27/04)
-    [13,"Fluminense","Chapecoense","2026-04-25"],[13,"Botafogo","Internacional","2026-04-26"],
-    [13,"São Paulo","Mirassol","2026-04-25"],[13,"Corinthians","Vasco","2026-04-25"],
-    [13,"Red Bull Bragantino","Palmeiras","2026-04-25"],[13,"Atlético-MG","Flamengo","2026-04-26"],
-    [13,"Grêmio","Coritiba","2026-04-26"],[13,"Athletico-PR","Vitória","2026-04-25"],
-    [13,"Bahia","Santos","2026-04-26"],[13,"Remo","Cruzeiro","2026-04-25"],
-    // RODADA 14 (02-04/05)
-    [14,"Flamengo","Vasco","2026-05-02"],[14,"Botafogo","Remo","2026-05-03"],
-    [14,"São Paulo","Bahia","2026-05-02"],[14,"Palmeiras","Santos","2026-05-02"],
-    [14,"Mirassol","Corinthians","2026-05-03"],[14,"Cruzeiro","Atlético-MG","2026-05-02"],
-    [14,"Internacional","Fluminense","2026-05-03"],[14,"Athletico-PR","Grêmio","2026-05-02"],
-    [14,"Vitória","Coritiba","2026-05-03"],[14,"Chapecoense","Red Bull Bragantino","2026-05-03"],
-    // RODADA 15 (09-11/05)
-    [15,"Fluminense","Vitória","2026-05-09"],[15,"Vasco","Athletico-PR","2026-05-10"],
-    [15,"Santos","Red Bull Bragantino","2026-05-09"],[15,"Corinthians","São Paulo","2026-05-09"],
-    [15,"Mirassol","Chapecoense","2026-05-09"],[15,"Atlético-MG","Botafogo","2026-05-10"],
-    [15,"Grêmio","Flamengo","2026-05-10"],[15,"Coritiba","Internacional","2026-05-09"],
-    [15,"Bahia","Cruzeiro","2026-05-10"],[15,"Remo","Palmeiras","2026-05-11"],
-    // RODADA 16 (16-18/05)
-    [16,"Fluminense","São Paulo","2026-05-16"],[16,"Botafogo","Corinthians","2026-05-17"],
-    [16,"Santos","Coritiba","2026-05-16"],[16,"Palmeiras","Cruzeiro","2026-05-16"],
-    [16,"Red Bull Bragantino","Vitória","2026-05-17"],[16,"Atlético-MG","Mirassol","2026-05-16"],
-    [16,"Internacional","Vasco","2026-05-17"],[16,"Athletico-PR","Flamengo","2026-05-17"],
-    [16,"Bahia","Grêmio","2026-05-16"],[16,"Chapecoense","Remo","2026-05-18"],
-    // RODADA 17 (23-25/05)
-    [17,"Flamengo","Palmeiras","2026-05-23"],[17,"Vasco","Red Bull Bragantino","2026-05-24"],
-    [17,"São Paulo","Botafogo","2026-05-23"],[17,"Corinthians","Atlético-MG","2026-05-24"],
-    [17,"Mirassol","Fluminense","2026-05-23"],[17,"Cruzeiro","Chapecoense","2026-05-23"],
-    [17,"Grêmio","Santos","2026-05-24"],[17,"Coritiba","Bahia","2026-05-24"],
-    [17,"Vitória","Internacional","2026-05-23"],[17,"Remo","Athletico-PR","2026-05-25"],
-    // RODADA 18 (30/05-01/06)
-    [18,"Flamengo","Coritiba","2026-05-30"],[18,"Vasco","Atlético-MG","2026-05-31"],
-    [18,"Santos","Vitória","2026-05-30"],[18,"Palmeiras","Chapecoense","2026-05-30"],
-    [18,"Red Bull Bragantino","Internacional","2026-05-31"],[18,"Cruzeiro","Fluminense","2026-05-30"],
-    [18,"Grêmio","Corinthians","2026-05-31"],[18,"Athletico-PR","Mirassol","2026-05-31"],
-    [18,"Bahia","Botafogo","2026-05-30"],[18,"Remo","São Paulo","2026-06-01"],
-    // RODADA 19 (22-23/07)
-    [19,"Fluminense","Red Bull Bragantino","2026-07-22"],[19,"Botafogo","Santos","2026-07-22"],
-    [19,"São Paulo","Athletico-PR","2026-07-22"],[19,"Corinthians","Remo","2026-07-22"],
-    [19,"Mirassol","Grêmio","2026-07-22"],[19,"Atlético-MG","Bahia","2026-07-23"],
-    [19,"Internacional","Cruzeiro","2026-07-22"],[19,"Coritiba","Palmeiras","2026-07-23"],
-    [19,"Vitória","Vasco","2026-07-23"],[19,"Chapecoense","Flamengo","2026-07-22"],
-    // RODADA 20 (25-27/07)
-    [20,"Flamengo","São Paulo","2026-07-25"],[20,"Vasco","Mirassol","2026-07-26"],
-    [20,"Santos","Chapecoense","2026-07-25"],[20,"Palmeiras","Atlético-MG","2026-07-25"],
-    [20,"Red Bull Bragantino","Coritiba","2026-07-26"],[20,"Cruzeiro","Botafogo","2026-07-25"],
-    [20,"Grêmio","Fluminense","2026-07-26"],[20,"Athletico-PR","Internacional","2026-07-26"],
-    [20,"Bahia","Corinthians","2026-07-25"],[20,"Remo","Vitória","2026-07-27"],
-    // RODADA 21 (29-30/07)
-    [21,"Fluminense","Bahia","2026-07-29"],[21,"Botafogo","Grêmio","2026-07-29"],
-    [21,"São Paulo","Santos","2026-07-29"],[21,"Corinthians","Athletico-PR","2026-07-30"],
-    [21,"Mirassol","Remo","2026-07-29"],[21,"Atlético-MG","Red Bull Bragantino","2026-07-30"],
-    [21,"Internacional","Flamengo","2026-07-29"],[21,"Coritiba","Cruzeiro","2026-07-30"],
-    [21,"Vitória","Palmeiras","2026-07-30"],[21,"Chapecoense","Vasco","2026-07-29"],
-    // RODADA 22 (08-10/08)
-    [22,"Flamengo","Vitória","2026-08-08"],[22,"Botafogo","Fluminense","2026-08-09"],
-    [22,"Santos","Athletico-PR","2026-08-08"],[22,"Palmeiras","Internacional","2026-08-08"],
-    [22,"Red Bull Bragantino","Corinthians","2026-08-09"],[22,"Cruzeiro","Mirassol","2026-08-08"],
-    [22,"Grêmio","São Paulo","2026-08-08"],[22,"Coritiba","Chapecoense","2026-08-09"],
-    [22,"Bahia","Vasco","2026-08-10"],[22,"Remo","Atlético-MG","2026-08-09"],
-    // RODADA 23 (15-17/08)
-    [23,"Fluminense","Palmeiras","2026-08-15"],[23,"Vasco","Santos","2026-08-16"],
-    [23,"São Paulo","Coritiba","2026-08-15"],[23,"Corinthians","Cruzeiro","2026-08-15"],
-    [23,"Mirassol","Flamengo","2026-08-15"],[23,"Atlético-MG","Grêmio","2026-08-16"],
-    [23,"Internacional","Remo","2026-08-16"],[23,"Athletico-PR","Red Bull Bragantino","2026-08-15"],
-    [23,"Vitória","Botafogo","2026-08-16"],[23,"Chapecoense","Bahia","2026-08-17"],
-    // RODADA 24 (22-24/08)
-    [24,"Fluminense","Remo","2026-08-22"],[24,"Botafogo","Athletico-PR","2026-08-22"],
-    [24,"Santos","Mirassol","2026-08-22"],[24,"Palmeiras","Vasco","2026-08-23"],
-    [24,"Red Bull Bragantino","Grêmio","2026-08-22"],[24,"Cruzeiro","Flamengo","2026-08-23"],
-    [24,"Internacional","Atlético-MG","2026-08-22"],[24,"Coritiba","Corinthians","2026-08-23"],
-    [24,"Vitória","Bahia","2026-08-23"],[24,"Chapecoense","São Paulo","2026-08-24"],
-    // RODADA 25 (29-31/08)
-    [25,"Flamengo","Botafogo","2026-08-29"],[25,"Vasco","Cruzeiro","2026-08-30"],
-    [25,"São Paulo","Red Bull Bragantino","2026-08-29"],[25,"Corinthians","Santos","2026-08-29"],
-    [25,"Mirassol","Palmeiras","2026-08-29"],[25,"Atlético-MG","Vitória","2026-08-30"],
-    [25,"Grêmio","Chapecoense","2026-08-30"],[25,"Athletico-PR","Fluminense","2026-08-29"],
-    [25,"Bahia","Internacional","2026-08-30"],[25,"Remo","Coritiba","2026-08-31"],
-    // RODADA 26 (05-07/09)
-    [26,"Fluminense","Vasco","2026-09-05"],[26,"Botafogo","Palmeiras","2026-09-06"],
-    [26,"São Paulo","Atlético-MG","2026-09-05"],[26,"Corinthians","Chapecoense","2026-09-05"],
-    [26,"Red Bull Bragantino","Bahia","2026-09-06"],[26,"Cruzeiro","Athletico-PR","2026-09-05"],
-    [26,"Internacional","Santos","2026-09-06"],[26,"Coritiba","Mirassol","2026-09-05"],
-    [26,"Vitória","Grêmio","2026-09-07"],[26,"Remo","Flamengo","2026-09-06"],
-    // RODADA 27 (12-14/09)
-    [27,"Flamengo","Corinthians","2026-09-12"],[27,"Botafogo","Red Bull Bragantino","2026-09-13"],
-    [27,"Santos","Cruzeiro","2026-09-12"],[27,"Palmeiras","São Paulo","2026-09-13"],
-    [27,"Mirassol","Vitória","2026-09-12"],[27,"Atlético-MG","Fluminense","2026-09-12"],
-    [27,"Grêmio","Vasco","2026-09-13"],[27,"Coritiba","Athletico-PR","2026-09-13"],
-    [27,"Bahia","Remo","2026-09-13"],[27,"Chapecoense","Internacional","2026-09-14"],
-    // RODADA 28 (19-21/09)
-    [28,"Flamengo","Red Bull Bragantino","2026-09-19"],[28,"Vasco","Coritiba","2026-09-20"],
-    [28,"São Paulo","Internacional","2026-09-19"],[28,"Corinthians","Fluminense","2026-09-20"],
-    [28,"Mirassol","Botafogo","2026-09-19"],[28,"Atlético-MG","Chapecoense","2026-09-19"],
-    [28,"Grêmio","Palmeiras","2026-09-20"],[28,"Athletico-PR","Bahia","2026-09-20"],
-    [28,"Vitória","Cruzeiro","2026-09-20"],[28,"Remo","Santos","2026-09-21"],
-    // RODADA 29 (07-08/10)
-    [29,"Fluminense","Coritiba","2026-10-07"],[29,"Botafogo","Vasco","2026-10-07"],
-    [29,"Santos","Flamengo","2026-10-07"],[29,"Palmeiras","Bahia","2026-10-07"],
-    [29,"Red Bull Bragantino","Mirassol","2026-10-07"],[29,"Cruzeiro","São Paulo","2026-10-07"],
-    [29,"Internacional","Corinthians","2026-10-08"],[29,"Athletico-PR","Atlético-MG","2026-10-07"],
-    [29,"Vitória","Chapecoense","2026-10-08"],[29,"Remo","Grêmio","2026-10-07"],
-    // RODADA 30 (10-12/10)
-    [30,"Flamengo","Fluminense","2026-10-10"],[30,"Vasco","Remo","2026-10-11"],
-    [30,"São Paulo","Vitória","2026-10-10"],[30,"Palmeiras","Corinthians","2026-10-10"],
-    [30,"Red Bull Bragantino","Cruzeiro","2026-10-11"],[30,"Atlético-MG","Santos","2026-10-10"],
-    [30,"Grêmio","Internacional","2026-10-11"],[30,"Coritiba","Botafogo","2026-10-10"],
-    [30,"Bahia","Mirassol","2026-10-12"],[30,"Chapecoense","Athletico-PR","2026-10-10"],
-    // RODADA 31 (17-19/10)
-    [31,"Fluminense","Santos","2026-10-17"],[31,"Botafogo","Chapecoense","2026-10-17"],
-    [31,"São Paulo","Vasco","2026-10-17"],[31,"Corinthians","Vitória","2026-10-18"],
-    [31,"Mirassol","Internacional","2026-10-17"],[31,"Atlético-MG","Coritiba","2026-10-17"],
-    [31,"Grêmio","Cruzeiro","2026-10-18"],[31,"Athletico-PR","Palmeiras","2026-10-18"],
-    [31,"Bahia","Flamengo","2026-10-18"],[31,"Remo","Red Bull Bragantino","2026-10-19"],
-    // RODADA 32 (24-26/10)
-    [32,"Flamengo","Atlético-MG","2026-10-24"],[32,"Vasco","Corinthians","2026-10-25"],
-    [32,"Santos","Bahia","2026-10-24"],[32,"Palmeiras","Red Bull Bragantino","2026-10-24"],
-    [32,"Mirassol","São Paulo","2026-10-24"],[32,"Cruzeiro","Remo","2026-10-25"],
-    [32,"Internacional","Botafogo","2026-10-25"],[32,"Coritiba","Grêmio","2026-10-25"],
-    [32,"Vitória","Athletico-PR","2026-10-25"],[32,"Chapecoense","Fluminense","2026-10-26"],
-    // RODADA 33 (28-29/10)
-    [33,"Fluminense","Internacional","2026-10-28"],[33,"Vasco","Flamengo","2026-10-28"],
-    [33,"Santos","Palmeiras","2026-10-28"],[33,"Corinthians","Mirassol","2026-10-29"],
-    [33,"Red Bull Bragantino","Chapecoense","2026-10-28"],[33,"Atlético-MG","Cruzeiro","2026-10-29"],
-    [33,"Grêmio","Athletico-PR","2026-10-28"],[33,"Coritiba","Vitória","2026-10-29"],
-    [33,"Bahia","São Paulo","2026-10-29"],[33,"Remo","Botafogo","2026-10-28"],
-    // RODADA 34 (04-05/11)
-    [34,"Flamengo","Grêmio","2026-11-04"],[34,"Botafogo","Atlético-MG","2026-11-04"],
-    [34,"São Paulo","Corinthians","2026-11-04"],[34,"Palmeiras","Remo","2026-11-04"],
-    [34,"Red Bull Bragantino","Santos","2026-11-05"],[34,"Cruzeiro","Bahia","2026-11-04"],
-    [34,"Internacional","Coritiba","2026-11-05"],[34,"Athletico-PR","Vasco","2026-11-04"],
-    [34,"Vitória","Fluminense","2026-11-05"],[34,"Chapecoense","Mirassol","2026-11-04"],
-    // RODADA 35 (18-19/11)
-    [35,"Flamengo","Athletico-PR","2026-11-18"],[35,"Vasco","Internacional","2026-11-18"],
-    [35,"São Paulo","Fluminense","2026-11-18"],[35,"Corinthians","Botafogo","2026-11-19"],
-    [35,"Mirassol","Atlético-MG","2026-11-18"],[35,"Cruzeiro","Palmeiras","2026-11-18"],
-    [35,"Grêmio","Bahia","2026-11-19"],[35,"Coritiba","Santos","2026-11-18"],
-    [35,"Vitória","Red Bull Bragantino","2026-11-19"],[35,"Remo","Chapecoense","2026-11-18"],
-    // RODADA 36 (21-23/11)
-    [36,"Fluminense","Mirassol","2026-11-21"],[36,"Botafogo","São Paulo","2026-11-22"],
-    [36,"Santos","Grêmio","2026-11-21"],[36,"Palmeiras","Flamengo","2026-11-21"],
-    [36,"Red Bull Bragantino","Vasco","2026-11-22"],[36,"Atlético-MG","Corinthians","2026-11-21"],
-    [36,"Internacional","Vitória","2026-11-22"],[36,"Athletico-PR","Remo","2026-11-21"],
-    [36,"Bahia","Coritiba","2026-11-22"],[36,"Chapecoense","Cruzeiro","2026-11-23"],
-    // RODADA 37 (28-29/11... foi 04-05/11 mas vou usar datas corretas)
-    [37,"Fluminense","Cruzeiro","2026-11-25"],[37,"Botafogo","Bahia","2026-11-25"],
-    [37,"São Paulo","Remo","2026-11-25"],[37,"Corinthians","Grêmio","2026-11-25"],
-    [37,"Mirassol","Athletico-PR","2026-11-25"],[37,"Atlético-MG","Vasco","2026-11-25"],
-    [37,"Internacional","Red Bull Bragantino","2026-11-25"],[37,"Coritiba","Flamengo","2026-11-25"],
-    [37,"Vitória","Santos","2026-11-25"],[37,"Chapecoense","Palmeiras","2026-11-25"],
-    // RODADA 38 (02/12)
-    [38,"Flamengo","Chapecoense","2026-12-02"],[38,"Vasco","Vitória","2026-12-02"],
-    [38,"Santos","Coritiba","2026-12-02"],[38,"Palmeiras","Mirassol","2026-12-02"],
-    [38,"Red Bull Bragantino","Athletico-PR","2026-12-02"],[38,"Cruzeiro","Internacional","2026-12-02"],
-    [38,"Grêmio","Botafogo","2026-12-02"],[38,"Atlético-MG","Bahia","2026-12-02"],
-    [38,"Corinthians","São Paulo","2026-12-02"],[38,"Fluminense","Remo","2026-12-02"],
-  ];
+// ─── JOGOS ───────────────────────────────────────────────────────────────────
+const RAW = [
+  [1,"Fluminense","Grêmio","2026-01-29"],[1,"Botafogo","Cruzeiro","2026-01-29"],
+  [1,"São Paulo","Flamengo","2026-01-28"],[1,"Corinthians","Bahia","2026-01-29"],
+  [1,"Mirassol","Vasco","2026-01-29"],[1,"Atlético-MG","Palmeiras","2026-01-28"],
+  [1,"Internacional","Athletico-PR","2026-01-29"],[1,"Coritiba","Red Bull Bragantino","2026-01-29"],
+  [1,"Vitória","Remo","2026-01-29"],[1,"Chapecoense","Santos","2026-01-29"],
+  [2,"Flamengo","Internacional","2026-02-04"],[2,"Vasco","Chapecoense","2026-02-05"],
+  [2,"Santos","São Paulo","2026-02-04"],[2,"Palmeiras","Vitória","2026-02-04"],
+  [2,"Red Bull Bragantino","Atlético-MG","2026-02-05"],[2,"Cruzeiro","Coritiba","2026-02-04"],
+  [2,"Grêmio","Botafogo","2026-02-04"],[2,"Athletico-PR","Corinthians","2026-02-05"],
+  [2,"Bahia","Fluminense","2026-02-05"],[2,"Remo","Mirassol","2026-02-05"],
+  [3,"Fluminense","Botafogo","2026-02-11"],[3,"Vasco","Bahia","2026-02-12"],
+  [3,"São Paulo","Grêmio","2026-02-11"],[3,"Corinthians","Red Bull Bragantino","2026-02-12"],
+  [3,"Mirassol","Cruzeiro","2026-02-11"],[3,"Atlético-MG","Remo","2026-02-12"],
+  [3,"Internacional","Palmeiras","2026-02-11"],[3,"Athletico-PR","Santos","2026-02-12"],
+  [3,"Vitória","Flamengo","2026-02-11"],[3,"Chapecoense","Coritiba","2026-02-12"],
+  [4,"Flamengo","Mirassol","2026-02-25"],[4,"Botafogo","Vitória","2026-02-25"],
+  [4,"Santos","Vasco","2026-02-25"],[4,"Palmeiras","Fluminense","2026-02-25"],
+  [4,"Red Bull Bragantino","Athletico-PR","2026-02-25"],[4,"Cruzeiro","Corinthians","2026-02-25"],
+  [4,"Grêmio","Atlético-MG","2026-02-26"],[4,"Coritiba","São Paulo","2026-02-26"],
+  [4,"Bahia","Chapecoense","2026-02-26"],[4,"Remo","Internacional","2026-02-26"],
+  [5,"Flamengo","Cruzeiro","2026-03-11"],[5,"Vasco","Palmeiras","2026-03-12"],
+  [5,"São Paulo","Chapecoense","2026-03-11"],[5,"Corinthians","Coritiba","2026-03-12"],
+  [5,"Mirassol","Santos","2026-03-11"],[5,"Atlético-MG","Internacional","2026-03-11"],
+  [5,"Grêmio","Red Bull Bragantino","2026-03-12"],[5,"Athletico-PR","Botafogo","2026-03-12"],
+  [5,"Bahia","Vitória","2026-03-11"],[5,"Remo","Fluminense","2026-03-12"],
+  [6,"Fluminense","Athletico-PR","2026-03-14"],[6,"Botafogo","Flamengo","2026-03-15"],
+  [6,"Santos","Corinthians","2026-03-14"],[6,"Palmeiras","Mirassol","2026-03-14"],
+  [6,"Red Bull Bragantino","São Paulo","2026-03-14"],[6,"Cruzeiro","Vasco","2026-03-15"],
+  [6,"Internacional","Bahia","2026-03-15"],[6,"Coritiba","Remo","2026-03-14"],
+  [6,"Vitória","Atlético-MG","2026-03-15"],[6,"Chapecoense","Grêmio","2026-03-15"],
+  [7,"Flamengo","Remo","2026-03-18"],[7,"Vasco","Fluminense","2026-03-19"],
+  [7,"Santos","Internacional","2026-03-18"],[7,"Palmeiras","Botafogo","2026-03-18"],
+  [7,"Mirassol","Coritiba","2026-03-18"],[7,"Atlético-MG","São Paulo","2026-03-19"],
+  [7,"Grêmio","Vitória","2026-03-19"],[7,"Athletico-PR","Cruzeiro","2026-03-18"],
+  [7,"Bahia","Red Bull Bragantino","2026-03-19"],[7,"Chapecoense","Corinthians","2026-03-18"],
+  [8,"Fluminense","Atlético-MG","2026-03-21"],[8,"Vasco","Grêmio","2026-03-22"],
+  [8,"São Paulo","Palmeiras","2026-03-21"],[8,"Corinthians","Flamengo","2026-03-22"],
+  [8,"Red Bull Bragantino","Botafogo","2026-03-21"],[8,"Cruzeiro","Santos","2026-03-22"],
+  [8,"Internacional","Chapecoense","2026-03-21"],[8,"Athletico-PR","Coritiba","2026-03-22"],
+  [8,"Vitória","Mirassol","2026-03-22"],[8,"Remo","Bahia","2026-03-21"],
+  [9,"Fluminense","Corinthians","2026-04-01"],[9,"Botafogo","Mirassol","2026-04-01"],
+  [9,"Santos","Remo","2026-04-02"],[9,"Palmeiras","Grêmio","2026-04-01"],
+  [9,"Red Bull Bragantino","Flamengo","2026-04-01"],[9,"Cruzeiro","Vitória","2026-04-02"],
+  [9,"Internacional","São Paulo","2026-04-01"],[9,"Coritiba","Vasco","2026-04-02"],
+  [9,"Bahia","Athletico-PR","2026-04-02"],[9,"Chapecoense","Atlético-MG","2026-04-01"],
+  [10,"Flamengo","Santos","2026-04-05"],[10,"Vasco","Botafogo","2026-04-05"],
+  [10,"São Paulo","Cruzeiro","2026-04-05"],[10,"Corinthians","Internacional","2026-04-05"],
+  [10,"Mirassol","Red Bull Bragantino","2026-04-05"],[10,"Atlético-MG","Athletico-PR","2026-04-05"],
+  [10,"Grêmio","Remo","2026-04-05"],[10,"Coritiba","Fluminense","2026-04-06"],
+  [10,"Bahia","Palmeiras","2026-04-05"],[10,"Chapecoense","Vitória","2026-04-05"],
+  [11,"Fluminense","Flamengo","2026-04-11"],[11,"Botafogo","Coritiba","2026-04-12"],
+  [11,"Santos","Atlético-MG","2026-04-11"],[11,"Corinthians","Palmeiras","2026-04-12"],
+  [11,"Mirassol","Bahia","2026-04-11"],[11,"Cruzeiro","Red Bull Bragantino","2026-04-12"],
+  [11,"Internacional","Grêmio","2026-04-12"],[11,"Athletico-PR","Chapecoense","2026-04-11"],
+  [11,"Vitória","São Paulo","2026-04-11"],[11,"Remo","Vasco","2026-04-12"],
+  [12,"Flamengo","Bahia","2026-04-18"],[12,"Vasco","São Paulo","2026-04-19"],
+  [12,"Santos","Fluminense","2026-04-18"],[12,"Palmeiras","Athletico-PR","2026-04-19"],
+  [12,"Red Bull Bragantino","Remo","2026-04-18"],[12,"Cruzeiro","Grêmio","2026-04-18"],
+  [12,"Internacional","Mirassol","2026-04-19"],[12,"Coritiba","Atlético-MG","2026-04-19"],
+  [12,"Vitória","Corinthians","2026-04-18"],[12,"Chapecoense","Botafogo","2026-04-20"],
+  [13,"Fluminense","Chapecoense","2026-04-25"],[13,"Botafogo","Internacional","2026-04-26"],
+  [13,"São Paulo","Mirassol","2026-04-25"],[13,"Corinthians","Vasco","2026-04-25"],
+  [13,"Red Bull Bragantino","Palmeiras","2026-04-25"],[13,"Atlético-MG","Flamengo","2026-04-26"],
+  [13,"Grêmio","Coritiba","2026-04-26"],[13,"Athletico-PR","Vitória","2026-04-25"],
+  [13,"Bahia","Santos","2026-04-26"],[13,"Remo","Cruzeiro","2026-04-25"],
+  [14,"Flamengo","Vasco","2026-05-02"],[14,"Botafogo","Remo","2026-05-03"],
+  [14,"São Paulo","Bahia","2026-05-02"],[14,"Palmeiras","Santos","2026-05-02"],
+  [14,"Mirassol","Corinthians","2026-05-03"],[14,"Cruzeiro","Atlético-MG","2026-05-02"],
+  [14,"Internacional","Fluminense","2026-05-03"],[14,"Athletico-PR","Grêmio","2026-05-02"],
+  [14,"Vitória","Coritiba","2026-05-03"],[14,"Chapecoense","Red Bull Bragantino","2026-05-03"],
+  [15,"Fluminense","Vitória","2026-05-09"],[15,"Vasco","Athletico-PR","2026-05-10"],
+  [15,"Santos","Red Bull Bragantino","2026-05-09"],[15,"Corinthians","São Paulo","2026-05-09"],
+  [15,"Mirassol","Chapecoense","2026-05-09"],[15,"Atlético-MG","Botafogo","2026-05-10"],
+  [15,"Grêmio","Flamengo","2026-05-10"],[15,"Coritiba","Internacional","2026-05-09"],
+  [15,"Bahia","Cruzeiro","2026-05-10"],[15,"Remo","Palmeiras","2026-05-11"],
+  [16,"Fluminense","São Paulo","2026-05-16"],[16,"Botafogo","Corinthians","2026-05-17"],
+  [16,"Santos","Coritiba","2026-05-16"],[16,"Palmeiras","Cruzeiro","2026-05-16"],
+  [16,"Red Bull Bragantino","Vitória","2026-05-17"],[16,"Atlético-MG","Mirassol","2026-05-16"],
+  [16,"Internacional","Vasco","2026-05-17"],[16,"Athletico-PR","Flamengo","2026-05-17"],
+  [16,"Bahia","Grêmio","2026-05-16"],[16,"Chapecoense","Remo","2026-05-18"],
+  [17,"Flamengo","Palmeiras","2026-05-23"],[17,"Vasco","Red Bull Bragantino","2026-05-24"],
+  [17,"São Paulo","Botafogo","2026-05-23"],[17,"Corinthians","Atlético-MG","2026-05-24"],
+  [17,"Mirassol","Fluminense","2026-05-23"],[17,"Cruzeiro","Chapecoense","2026-05-23"],
+  [17,"Grêmio","Santos","2026-05-24"],[17,"Coritiba","Bahia","2026-05-24"],
+  [17,"Vitória","Internacional","2026-05-23"],[17,"Remo","Athletico-PR","2026-05-25"],
+  [18,"Flamengo","Coritiba","2026-05-30"],[18,"Vasco","Atlético-MG","2026-05-31"],
+  [18,"Santos","Vitória","2026-05-30"],[18,"Palmeiras","Chapecoense","2026-05-30"],
+  [18,"Red Bull Bragantino","Internacional","2026-05-31"],[18,"Cruzeiro","Fluminense","2026-05-30"],
+  [18,"Grêmio","Corinthians","2026-05-31"],[18,"Athletico-PR","Mirassol","2026-05-31"],
+  [18,"Bahia","Botafogo","2026-05-30"],[18,"Remo","São Paulo","2026-06-01"],
+  [19,"Fluminense","Red Bull Bragantino","2026-07-22"],[19,"Botafogo","Santos","2026-07-22"],
+  [19,"São Paulo","Athletico-PR","2026-07-22"],[19,"Corinthians","Remo","2026-07-22"],
+  [19,"Mirassol","Grêmio","2026-07-22"],[19,"Atlético-MG","Bahia","2026-07-23"],
+  [19,"Internacional","Cruzeiro","2026-07-22"],[19,"Coritiba","Palmeiras","2026-07-23"],
+  [19,"Vitória","Vasco","2026-07-23"],[19,"Chapecoense","Flamengo","2026-07-22"],
+  [20,"Flamengo","São Paulo","2026-07-25"],[20,"Vasco","Mirassol","2026-07-26"],
+  [20,"Santos","Chapecoense","2026-07-25"],[20,"Palmeiras","Atlético-MG","2026-07-25"],
+  [20,"Red Bull Bragantino","Coritiba","2026-07-26"],[20,"Cruzeiro","Botafogo","2026-07-25"],
+  [20,"Grêmio","Fluminense","2026-07-26"],[20,"Athletico-PR","Internacional","2026-07-26"],
+  [20,"Bahia","Corinthians","2026-07-25"],[20,"Remo","Vitória","2026-07-27"],
+  [21,"Fluminense","Bahia","2026-07-29"],[21,"Botafogo","Grêmio","2026-07-29"],
+  [21,"São Paulo","Santos","2026-07-29"],[21,"Corinthians","Athletico-PR","2026-07-30"],
+  [21,"Mirassol","Remo","2026-07-29"],[21,"Atlético-MG","Red Bull Bragantino","2026-07-30"],
+  [21,"Internacional","Flamengo","2026-07-29"],[21,"Coritiba","Cruzeiro","2026-07-30"],
+  [21,"Vitória","Palmeiras","2026-07-30"],[21,"Chapecoense","Vasco","2026-07-29"],
+  [22,"Flamengo","Vitória","2026-08-08"],[22,"Botafogo","Fluminense","2026-08-09"],
+  [22,"Santos","Athletico-PR","2026-08-08"],[22,"Palmeiras","Internacional","2026-08-08"],
+  [22,"Red Bull Bragantino","Corinthians","2026-08-09"],[22,"Cruzeiro","Mirassol","2026-08-08"],
+  [22,"Grêmio","São Paulo","2026-08-08"],[22,"Coritiba","Chapecoense","2026-08-09"],
+  [22,"Bahia","Vasco","2026-08-10"],[22,"Remo","Atlético-MG","2026-08-09"],
+  [23,"Fluminense","Palmeiras","2026-08-15"],[23,"Vasco","Santos","2026-08-16"],
+  [23,"São Paulo","Coritiba","2026-08-15"],[23,"Corinthians","Cruzeiro","2026-08-15"],
+  [23,"Mirassol","Flamengo","2026-08-15"],[23,"Atlético-MG","Grêmio","2026-08-16"],
+  [23,"Internacional","Remo","2026-08-16"],[23,"Athletico-PR","Red Bull Bragantino","2026-08-15"],
+  [23,"Vitória","Botafogo","2026-08-16"],[23,"Chapecoense","Bahia","2026-08-17"],
+  [24,"Fluminense","Remo","2026-08-22"],[24,"Botafogo","Athletico-PR","2026-08-22"],
+  [24,"Santos","Mirassol","2026-08-22"],[24,"Palmeiras","Vasco","2026-08-23"],
+  [24,"Red Bull Bragantino","Grêmio","2026-08-22"],[24,"Cruzeiro","Flamengo","2026-08-23"],
+  [24,"Internacional","Atlético-MG","2026-08-22"],[24,"Coritiba","Corinthians","2026-08-23"],
+  [24,"Vitória","Bahia","2026-08-23"],[24,"Chapecoense","São Paulo","2026-08-24"],
+  [25,"Flamengo","Botafogo","2026-08-29"],[25,"Vasco","Cruzeiro","2026-08-30"],
+  [25,"São Paulo","Red Bull Bragantino","2026-08-29"],[25,"Corinthians","Santos","2026-08-29"],
+  [25,"Mirassol","Palmeiras","2026-08-29"],[25,"Atlético-MG","Vitória","2026-08-30"],
+  [25,"Grêmio","Chapecoense","2026-08-30"],[25,"Athletico-PR","Fluminense","2026-08-29"],
+  [25,"Bahia","Internacional","2026-08-30"],[25,"Remo","Coritiba","2026-08-31"],
+  [26,"Fluminense","Vasco","2026-09-05"],[26,"Botafogo","Palmeiras","2026-09-06"],
+  [26,"São Paulo","Atlético-MG","2026-09-05"],[26,"Corinthians","Chapecoense","2026-09-05"],
+  [26,"Red Bull Bragantino","Bahia","2026-09-06"],[26,"Cruzeiro","Athletico-PR","2026-09-05"],
+  [26,"Internacional","Santos","2026-09-06"],[26,"Coritiba","Mirassol","2026-09-05"],
+  [26,"Vitória","Grêmio","2026-09-07"],[26,"Remo","Flamengo","2026-09-06"],
+  [27,"Flamengo","Corinthians","2026-09-12"],[27,"Botafogo","Red Bull Bragantino","2026-09-13"],
+  [27,"Santos","Cruzeiro","2026-09-12"],[27,"Palmeiras","São Paulo","2026-09-13"],
+  [27,"Mirassol","Vitória","2026-09-12"],[27,"Atlético-MG","Fluminense","2026-09-12"],
+  [27,"Grêmio","Vasco","2026-09-13"],[27,"Coritiba","Athletico-PR","2026-09-13"],
+  [27,"Bahia","Remo","2026-09-13"],[27,"Chapecoense","Internacional","2026-09-14"],
+  [28,"Flamengo","Red Bull Bragantino","2026-09-19"],[28,"Vasco","Coritiba","2026-09-20"],
+  [28,"São Paulo","Internacional","2026-09-19"],[28,"Corinthians","Fluminense","2026-09-20"],
+  [28,"Mirassol","Botafogo","2026-09-19"],[28,"Atlético-MG","Chapecoense","2026-09-19"],
+  [28,"Grêmio","Palmeiras","2026-09-20"],[28,"Athletico-PR","Bahia","2026-09-20"],
+  [28,"Vitória","Cruzeiro","2026-09-20"],[28,"Remo","Santos","2026-09-21"],
+  [29,"Fluminense","Coritiba","2026-10-07"],[29,"Botafogo","Vasco","2026-10-07"],
+  [29,"Santos","Flamengo","2026-10-07"],[29,"Palmeiras","Bahia","2026-10-07"],
+  [29,"Red Bull Bragantino","Mirassol","2026-10-07"],[29,"Cruzeiro","São Paulo","2026-10-07"],
+  [29,"Internacional","Corinthians","2026-10-08"],[29,"Athletico-PR","Atlético-MG","2026-10-07"],
+  [29,"Vitória","Chapecoense","2026-10-08"],[29,"Remo","Grêmio","2026-10-07"],
+  [30,"Flamengo","Fluminense","2026-10-10"],[30,"Vasco","Remo","2026-10-11"],
+  [30,"São Paulo","Vitória","2026-10-10"],[30,"Palmeiras","Corinthians","2026-10-10"],
+  [30,"Red Bull Bragantino","Cruzeiro","2026-10-11"],[30,"Atlético-MG","Santos","2026-10-10"],
+  [30,"Grêmio","Internacional","2026-10-11"],[30,"Coritiba","Botafogo","2026-10-10"],
+  [30,"Bahia","Mirassol","2026-10-12"],[30,"Chapecoense","Athletico-PR","2026-10-10"],
+  [31,"Fluminense","Santos","2026-10-17"],[31,"Botafogo","Chapecoense","2026-10-17"],
+  [31,"São Paulo","Vasco","2026-10-17"],[31,"Corinthians","Vitória","2026-10-18"],
+  [31,"Mirassol","Internacional","2026-10-17"],[31,"Atlético-MG","Coritiba","2026-10-17"],
+  [31,"Grêmio","Cruzeiro","2026-10-18"],[31,"Athletico-PR","Palmeiras","2026-10-18"],
+  [31,"Bahia","Flamengo","2026-10-18"],[31,"Remo","Red Bull Bragantino","2026-10-19"],
+  [32,"Flamengo","Atlético-MG","2026-10-24"],[32,"Vasco","Corinthians","2026-10-25"],
+  [32,"Santos","Bahia","2026-10-24"],[32,"Palmeiras","Red Bull Bragantino","2026-10-24"],
+  [32,"Mirassol","São Paulo","2026-10-24"],[32,"Cruzeiro","Remo","2026-10-25"],
+  [32,"Internacional","Botafogo","2026-10-25"],[32,"Coritiba","Grêmio","2026-10-25"],
+  [32,"Vitória","Athletico-PR","2026-10-25"],[32,"Chapecoense","Fluminense","2026-10-26"],
+  [33,"Fluminense","Internacional","2026-10-28"],[33,"Vasco","Flamengo","2026-10-28"],
+  [33,"Santos","Palmeiras","2026-10-28"],[33,"Corinthians","Mirassol","2026-10-29"],
+  [33,"Red Bull Bragantino","Chapecoense","2026-10-28"],[33,"Atlético-MG","Cruzeiro","2026-10-29"],
+  [33,"Grêmio","Athletico-PR","2026-10-28"],[33,"Coritiba","Vitória","2026-10-29"],
+  [33,"Bahia","São Paulo","2026-10-29"],[33,"Remo","Botafogo","2026-10-28"],
+  [34,"Flamengo","Grêmio","2026-11-04"],[34,"Botafogo","Atlético-MG","2026-11-04"],
+  [34,"São Paulo","Corinthians","2026-11-04"],[34,"Palmeiras","Remo","2026-11-04"],
+  [34,"Red Bull Bragantino","Santos","2026-11-05"],[34,"Cruzeiro","Bahia","2026-11-04"],
+  [34,"Internacional","Coritiba","2026-11-05"],[34,"Athletico-PR","Vasco","2026-11-04"],
+  [34,"Vitória","Fluminense","2026-11-05"],[34,"Chapecoense","Mirassol","2026-11-04"],
+  [35,"Flamengo","Athletico-PR","2026-11-18"],[35,"Vasco","Internacional","2026-11-18"],
+  [35,"São Paulo","Fluminense","2026-11-18"],[35,"Corinthians","Botafogo","2026-11-19"],
+  [35,"Mirassol","Atlético-MG","2026-11-18"],[35,"Cruzeiro","Palmeiras","2026-11-18"],
+  [35,"Grêmio","Bahia","2026-11-19"],[35,"Coritiba","Santos","2026-11-18"],
+  [35,"Vitória","Red Bull Bragantino","2026-11-19"],[35,"Remo","Chapecoense","2026-11-18"],
+  [36,"Fluminense","Mirassol","2026-11-21"],[36,"Botafogo","São Paulo","2026-11-22"],
+  [36,"Santos","Grêmio","2026-11-21"],[36,"Palmeiras","Flamengo","2026-11-21"],
+  [36,"Red Bull Bragantino","Vasco","2026-11-22"],[36,"Atlético-MG","Corinthians","2026-11-21"],
+  [36,"Internacional","Vitória","2026-11-22"],[36,"Athletico-PR","Remo","2026-11-21"],
+  [36,"Bahia","Coritiba","2026-11-22"],[36,"Chapecoense","Cruzeiro","2026-11-23"],
+  [37,"Fluminense","Cruzeiro","2026-11-25"],[37,"Botafogo","Bahia","2026-11-25"],
+  [37,"São Paulo","Remo","2026-11-25"],[37,"Corinthians","Grêmio","2026-11-25"],
+  [37,"Mirassol","Athletico-PR","2026-11-25"],[37,"Atlético-MG","Vasco","2026-11-25"],
+  [37,"Internacional","Red Bull Bragantino","2026-11-25"],[37,"Coritiba","Flamengo","2026-11-25"],
+  [37,"Vitória","Santos","2026-11-25"],[37,"Chapecoense","Palmeiras","2026-11-25"],
+  [38,"Flamengo","Chapecoense","2026-12-02"],[38,"Vasco","Vitória","2026-12-02"],
+  [38,"Santos","Coritiba","2026-12-02"],[38,"Palmeiras","Mirassol","2026-12-02"],
+  [38,"Red Bull Bragantino","Athletico-PR","2026-12-02"],[38,"Cruzeiro","Internacional","2026-12-02"],
+  [38,"Grêmio","Botafogo","2026-12-02"],[38,"Atlético-MG","Bahia","2026-12-02"],
+  [38,"Corinthians","São Paulo","2026-12-02"],[38,"Fluminense","Remo","2026-12-02"],
+];
+const MATCHES = RAW.map(([round,home,away,date],idx) => ({ id:idx+1, round, home, away, date }));
+const matchesByRound = {};
+MATCHES.forEach(m => { if(!matchesByRound[m.round]) matchesByRound[m.round]=[];  matchesByRound[m.round].push(m); });
+const ROUNDS = Array.from({length:38},(_,i)=>i+1);
 
-  return rawMatches.map(([round, home, away, date], idx) => ({
-    id: idx + 1,
-    round,
-    home,
-    away,
-    date,
-    homeScore: null,
-    awayScore: null,
-  }));
-};
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+const fmtDate = d => new Date(d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});
+const isLocked = m => new Date() >= new Date(new Date(m.date+"T10:00:00").getTime()-5*60*1000);
 
-const MATCHES = generateMatches();
-
-// ─── Funções de Pontuação ────────────────────────────────────────────────────
-const calcPoints = (pred, real) => {
-  if (!real || real.homeScore === null || real.awayScore === null) return null;
-  if (!pred || pred.homeScore === null || pred.awayScore === null) return 0;
-
-  const rh = real.homeScore, ra = real.awayScore;
-  const ph = pred.homeScore, pa = pred.awayScore;
-
-  // Placar exato
-  if (ph === rh && pa === ra) return 25;
-
-  const realWinner = rh > ra ? "H" : ra > rh ? "A" : "D";
-  const predWinner = ph > pa ? "H" : pa > ph ? "A" : "D";
-
-  if (realWinner !== predWinner) return 0;
-
-  // Vencedor certo + gols do vencedor
-  if (realWinner === "H" && ph === rh) return 18;
-  if (realWinner === "A" && pa === ra) return 18;
-  if (realWinner === "D" && ph === rh && pa === ra) return 25; // já foi acima
-
-  // Vencedor + saldo de gols
-  if (rh - ra === ph - pa) return 15;
-
-  // Vencedor + gols do perdedor
-  if (realWinner === "H" && pa === ra) return 12;
-  if (realWinner === "A" && ph === rh) return 12;
-  if (realWinner === "D") return 12; // empate certo mas placar diferente
-
-  // Só acertou o vencedor
+function calcPts(pred, real) {
+  if (!real || real.home==null || real.away==null || real.home==="" || real.away==="") return null;
+  if (!pred || pred.home==null || pred.away==null || pred.home==="" || pred.away==="") return 0;
+  const rh=+real.home, ra=+real.away, ph=+pred.home, pa=+pred.away;
+  if (ph===rh && pa===ra) return 25;
+  const rw = rh>ra?"H":ra>rh?"A":"D", pw = ph>pa?"H":pa>ph?"A":"D";
+  if (rw!==pw) return 0;
+  if (rw==="H"&&ph===rh) return 18;
+  if (rw==="A"&&pa===ra) return 18;
+  if (rh-ra===ph-pa) return 15;
+  if (rw==="H"&&pa===ra) return 12;
+  if (rw==="A"&&ph===rh) return 12;
+  if (rw==="D") return 12;
   return 10;
+}
+
+// ─── PALPITES INICIAIS (planilha) ─────────────────────────────────────────────
+const SEED_PREDS = {
+  tico:{1:{home:2,away:1},2:{home:1,away:0},3:{home:1,away:3},4:{home:1,away:0},5:{home:1,away:0},6:{home:1,away:0},7:{home:2,away:1},8:{home:1,away:1},9:{home:0,away:0},10:{home:1,away:0},11:{home:2,away:0},12:{home:2,away:0},13:{home:1,away:0},14:{home:2,away:0},15:{home:1,away:0},16:{home:1,away:0},17:{home:1,away:0},18:{home:2,away:1},19:{home:1,away:0},20:{home:0,away:1},21:{home:1,away:1},22:{home:1,away:2},23:{home:2,away:1},24:{home:1,away:0},25:{home:1,away:0},26:{home:2,away:0},27:{home:1,away:0},28:{home:2,away:1},29:{home:1,away:4},30:{home:1,away:0},31:{home:2,away:0},32:{home:2,away:0},33:{home:0,away:0},34:{home:1,away:0},35:{home:1,away:0},36:{home:1,away:0},37:{home:1,away:0},38:{home:1,away:0}},
+  pedro:{1:{home:1,away:2},2:{home:1,away:2},3:{home:1,away:3},4:{home:2,away:0},5:{home:1,away:2},6:{home:1,away:2},7:{home:2,away:1},8:{home:1,away:2},9:{home:1,away:2},10:{home:0,away:2},11:{home:3,away:1},12:{home:2,away:0},13:{home:2,away:1},14:{home:3,away:1},15:{home:2,away:3},16:{home:2,away:1},17:{home:2,away:1},18:{home:1,away:2},19:{home:1,away:2},20:{home:2,away:1},21:{home:2,away:1},22:{home:2,away:2},23:{home:1,away:2},24:{home:2,away:0},25:{home:1,away:0},26:{home:2,away:1},27:{home:1,away:1},28:{home:2,away:1},29:{home:1,away:3},30:{home:2,away:1},31:{home:3,away:1},32:{home:2,away:1},33:{home:1,away:2},34:{home:1,away:2},35:{home:1,away:2},36:{home:1,away:2},37:{home:2,away:1},38:{home:1,away:2}},
+  luquinhas:{1:{home:1,away:0},2:{home:2,away:1},3:{home:0,away:2},4:{home:2,away:1},5:{home:3,away:0},6:{home:2,away:1},7:{home:0,away:1},8:{home:0,away:0},9:{home:0,away:1},10:{home:1,away:1},11:{home:2,away:0},12:{home:2,away:0},13:{home:0,away:2},14:{home:3,away:1},15:{home:1,away:1},16:{home:2,away:0},17:{home:1,away:2},18:{home:1,away:1},19:{home:1,away:0},20:{home:0,away:2},21:{home:1,away:2},22:{home:2,away:0},23:{home:1,away:1},24:{home:1,away:1},25:{home:1,away:0},26:{home:2,away:0},27:{home:0,away:1},28:{home:3,away:1},29:{home:0,away:1},30:{home:0,away:1},31:{home:2,away:1},32:{home:3,away:1},33:{home:2,away:0},34:{home:3,away:1},35:{home:0,away:1},36:{home:1,away:1},37:{home:2,away:1},38:{home:2,away:1}},
+  lazaro:{1:{home:2,away:0},2:{home:1,away:2},3:{home:1,away:2},4:{home:2,away:0},5:{home:1,away:2},6:{home:1,away:2},7:{home:1,away:1},8:{home:2,away:1},9:{home:2,away:0},10:{home:1,away:2},11:{home:2,away:0},12:{home:3,away:0},13:{home:3,away:0},14:{home:3,away:0},15:{home:2,away:1},16:{home:3,away:0},17:{home:2,away:1},18:{home:2,away:0},19:{home:2,away:1},20:{home:0,away:1},21:{home:1,away:0},22:{home:1,away:2},23:{home:1,away:0},24:{home:2,away:0},25:{home:1,away:0},26:{home:3,away:1},27:{home:1,away:2},28:{home:2,away:0},29:{home:1,away:3},30:{home:2,away:0},31:{home:2,away:0},32:{home:2,away:1},33:{home:2,away:1},34:{home:2,away:1},35:{home:2,away:1},36:{home:1,away:2},37:{home:2,away:0},38:{home:2,away:1}},
+  vini:{1:{home:2,away:2},2:{home:2,away:1},3:{home:0,away:3},4:{home:0,away:0},5:{home:0,away:1},6:{home:1,away:1},7:{home:2,away:0},8:{home:1,away:1},9:{home:0,away:0},10:{home:0,away:1},11:{home:2,away:0},12:{home:3,away:1},13:{home:2,away:1},14:{home:3,away:0},15:{home:1,away:1},16:{home:2,away:1},17:{home:2,away:1},18:{home:1,away:0},19:{home:2,away:2},20:{home:1,away:1},21:{home:2,away:1},22:{home:1,away:0},23:{home:2,away:2},24:{home:2,away:1},25:{home:1,away:1},26:{home:2,away:0},27:{home:0,away:0},28:{home:1,away:1},29:{home:0,away:2},30:{home:0,away:1},31:{home:2,away:0},32:{home:3,away:0},33:{home:2,away:0},34:{home:3,away:1},35:{home:2,away:2},36:{home:2,away:2},37:{home:2,away:1},38:{home:1,away:1}},
+  dane:{1:{home:1,away:0},2:{home:1,away:2},3:{home:1,away:2},4:{home:1,away:0},5:{home:2,away:1},6:{home:1,away:1},7:{home:1,away:0},8:{home:2,away:1},9:{home:1,away:0},10:{home:1,away:1},11:{home:2,away:0},12:{home:1,away:0},13:{home:1,away:1},14:{home:2,away:0},15:{home:2,away:1},16:{home:2,away:0},17:{home:1,away:1},18:{home:1,away:0},19:{home:2,away:1},20:{home:0,away:1},21:{home:1,away:1},22:{home:0,away:1},23:{home:2,away:1},24:{home:1,away:0},25:{home:1,away:1},26:{home:2,away:0},27:{home:0,away:1},28:{home:1,away:0},29:{home:1,away:2},30:{home:0,away:0},31:{home:2,away:0},32:{home:2,away:0},33:{home:1,away:0},34:{home:2,away:1},35:{home:1,away:0},36:{home:1,away:0},37:{home:1,away:1},38:{home:1,away:2}},
+  alex:{1:{home:2,away:0},2:{home:0,away:1},3:{home:0,away:2},4:{home:2,away:0},5:{home:1,away:0},6:{home:1,away:1},7:{home:1,away:0},8:{home:1,away:1},9:{home:1,away:0},10:{home:0,away:1},11:{home:3,away:0},12:{home:1,away:0},13:{home:1,away:0},14:{home:2,away:1},15:{home:1,away:1},16:{home:3,away:0},17:{home:1,away:0},18:{home:0,away:0},19:{home:0,away:1},20:{home:0,away:2},21:{home:2,away:0},22:{home:2,away:1},23:{home:1,away:0},24:{home:1,away:2},25:{home:1,away:1},26:{home:3,away:1},27:{home:1,away:1},28:{home:0,away:1},29:{home:0,away:3},30:{home:1,away:2},31:{home:1,away:0},32:{home:1,away:0},33:{home:1,away:1},34:{home:1,away:1},35:{home:2,away:0},36:{home:2,away:1},37:{home:0,away:1},38:{home:1,away:2}},
 };
 
-// ─── Utils ───────────────────────────────────────────────────────────────────
-const formatDate = (dateStr) => {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", weekday: "short" });
-};
 
-const isMatchLocked = (match) => {
-  const matchTime = new Date(match.date + "T10:00:00"); // lock 10h antes do horário padrão
-  return new Date() >= new Date(matchTime.getTime() - 5 * 60 * 1000);
-};
-
-// ─── Componente Principal ────────────────────────────────────────────────────
+// ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [tab, setTab] = useState("jogos");
-  const [loginUser, setLoginUser] = useState("");
+  const [player, setPlayer]   = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [tab, setTab]         = useState("jogos");
+  const [activeRound, setActiveRound] = useState(10);
+  const stripRef = useRef(null);
+
+  const [loginName, setLoginName] = useState("");
   const [loginPass, setLoginPass] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [results, setResults] = useState({});
-  const [predictions, setPredictions] = useState({});
-  const [allPredictions, setAllPredictions] = useState({});
+  const [loginErr, setLoginErr]   = useState("");
+
+  const [savedPreds, setSavedPreds]   = useState({});
+  const [results, setResults]         = useState({});
+  const [payments, setPayments]       = useState({});
+  const [champion, setChampion]       = useState("");
   const [tableGuesses, setTableGuesses] = useState({});
-  const [allTableGuesses, setAllTableGuesses] = useState({});
-  const [champion, setChampion] = useState("");
-  const [editingResult, setEditingResult] = useState({});
-  const [filterRound, setFilterRound] = useState("all");
-  const [savedLogin, setSavedLogin] = useState(null);
 
-  // Recuperar login salvo
+  const [draftPreds, setDraftPreds] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [sent, setSent]     = useState(false);
+
+  // ── Firebase listeners ────────────────────────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem("br26_saved_login");
-    if (saved) setSavedLogin(JSON.parse(saved));
-  }, []);
-
-  // Firebase listeners
-  useEffect(() => {
-    const resultsRef = ref(db, "brasileirao2026/results");
-    const predsRef = ref(db, "brasileirao2026/predictions");
-    const tableRef = ref(db, "brasileirao2026/tableGuesses");
-    const champRef = ref(db, "brasileirao2026/champion");
-
-    onValue(resultsRef, (snap) => {
-      if (snap.exists()) {
-        setResults(snap.val());
-      } else {
-        set(resultsRef, KNOWN_RESULTS);
-        setResults(KNOWN_RESULTS);
-      }
-    });
-    onValue(predsRef, (snap) => {
-      if (snap.exists()) {
-        setAllPredictions(snap.val());
-      } else {
-        // Auto-seed predictions from spreadsheet
-        set(predsRef, KNOWN_PREDICTIONS);
-        setAllPredictions(KNOWN_PREDICTIONS);
-      }
-    });
-    onValue(tableRef, (snap) => { if (snap.exists()) setAllTableGuesses(snap.val()); });
-    onValue(champRef, (snap) => { if (snap.exists()) setChampion(snap.val()); });
-  }, []);
-
-  // Load user predictions
-  useEffect(() => {
-    if (user && allPredictions[user]) {
-      setPredictions(allPredictions[user]);
-    }
-    if (user && allTableGuesses[user]) {
-      setTableGuesses(allTableGuesses[user]);
-    }
-  }, [user, allPredictions, allTableGuesses]);
-
-  const handleLogin = (u) => {
-    const username = u || loginUser.toLowerCase().trim();
-    const pass = loginPass.trim();
-    if (CREDENTIALS[username] === pass) {
-      setUser(username);
-      setLoginError("");
-      const loginData = { username, time: Date.now() };
-      localStorage.setItem("br26_saved_login", JSON.stringify(loginData));
-      setSavedLogin(loginData);
-    } else {
-      setLoginError("Usuário ou senha incorretos");
-    }
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setLoginUser("");
-    setLoginPass("");
-  };
-
-  const savePrediction = async (matchId, home, away) => {
-    if (!user || user === ADMIN) return;
-    const updated = { ...predictions, [matchId]: { homeScore: Number(home), awayScore: Number(away) } };
-    setPredictions(updated);
-    await set(ref(db, `brasileirao2026/predictions/${user}/${matchId}`), { homeScore: Number(home), awayScore: Number(away) });
-  };
-
-  const saveResult = async (matchId, home, away) => {
-    if (user !== ADMIN) return;
-    const updated = { ...results, [matchId]: { homeScore: Number(home), awayScore: Number(away) } };
-    setResults(updated);
-    await set(ref(db, `brasileirao2026/results/${matchId}`), { homeScore: Number(home), awayScore: Number(away) });
-  };
-
-  const saveTableGuess = async (position, team) => {
-    if (!user || user === ADMIN) return;
-    const updated = { ...tableGuesses, [position]: team };
-    setTableGuesses(updated);
-    await set(ref(db, `brasileirao2026/tableGuesses/${user}/${position}`), team);
-  };
-
-  const saveChampion = async (team) => {
-    if (user !== ADMIN) return;
-    setChampion(team);
-    await set(ref(db, `brasileirao2026/champion`), team);
-  };
-
-  // Calcular ranking
-  const calculateRanking = () => {
-    return PLAYERS.map((player) => {
-      const preds = allPredictions[player] || {};
-      const tGuess = allTableGuesses[player] || {};
-
-      let points = 0;
-      let exact = 0;
-      let correct = 0;
-
-      MATCHES.forEach((match) => {
-        const real = results[match.id];
-        const pred = preds[match.id];
-        if (!real || real.homeScore === null) return;
-        const pts = calcPoints(pred, real);
-        if (pts > 0) {
-          points += pts;
-          if (pts === 25) exact++;
-          if (pts >= 10) correct++;
-        }
+    onValue(DB.results(), snap => setResults(snap.exists() ? snap.val() : {}));
+    onValue(DB.payments(), snap => setPayments(snap.exists() ? snap.val() : {}));
+    onValue(DB.champion(), snap => setChampion(snap.exists() ? snap.val() : ""));
+    ALL_IDS.forEach(pid => {
+      onValue(DB.preds(pid), snap => {
+        setSavedPreds(prev => ({ ...prev, [pid]: snap.exists() ? snap.val() : {} }));
       });
+      onValue(DB.tableGuesses(pid), snap => {
+        setTableGuesses(prev => ({ ...prev, [pid]: snap.exists() ? snap.val() : {} }));
+      });
+    });
+  }, []);
 
-      // Campeão
-      let champPoints = 0;
-      if (champion && tGuess[1] === champion) champPoints = 100;
-      points += champPoints;
+  // Seed palpites se vazio
+  useEffect(() => {
+    const hasPreds = Object.keys(savedPreds).some(pid => Object.keys(savedPreds[pid]||{}).length > 0);
+    if (!hasPreds) return;
+    // preds já existem, não seed
+  }, [savedPreds]);
 
-      // Palpites de tabela (posições certas)
-      let tablePoints = 0;
-      if (champion) {
-        TEAMS.forEach((_, i) => {
-          const pos = i + 1;
-          // Verificamos posições acertadas com base na classificação final (quando disponível)
-          // Por ora: posição 1 só se campeão correto (já contado)
-        });
-      }
+  useEffect(() => {
+    if (!player || isAdmin) return;
+    setDraftPreds(savedPreds[player.id] || SEED_PREDS[player.id] || {});
+    setSent(false);
+  }, [player?.id]);
 
-      return { player, points, exact, correct, champPoints };
-    }).sort((a, b) => b.points - a.points);
-  };
+  // Auto-navegar para rodada atual
+  useEffect(() => {
+    if (tab !== "jogos" || !player || isAdmin) return;
+    const firstOpen = ROUNDS.find(r =>
+      matchesByRound[r].some(m => !results[m.id]?.home && results[m.id]?.home !== 0)
+    );
+    const target = firstOpen ?? 38;
+    setActiveRound(target);
+    setTimeout(() => {
+      const el = stripRef.current?.querySelector(`[data-round="${target}"]`);
+      el?.scrollIntoView({ inline:"center", behavior:"smooth" });
+    }, 200);
+  }, [tab, player?.id, results]);
 
-  const ranking = calculateRanking();
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  function handleLogin() {
+    setLoginErr("");
+    const n = loginName.trim().toLowerCase();
+    if (n==="admin" && loginPass.trim()===ADMIN_PASS) {
+      try { localStorage.setItem("br26_user","admin"); localStorage.setItem("br26_pass",loginPass.trim()); } catch{}
+      setIsAdmin(true); setPlayer({id:"admin",name:"ADMIN"}); setTab("admin"); return;
+    }
+    const found = PLAYERS.find(p => p.id===n && PASSWORDS[p.id]===loginPass.trim());
+    if (found) {
+      try { localStorage.setItem("br26_user",n); localStorage.setItem("br26_pass",loginPass.trim()); } catch{}
+      setPlayer(found); setTab("jogos");
+    } else setLoginErr("Usuário ou senha incorretos.");
+  }
+  function handleLogout() {
+    setPlayer(null); setIsAdmin(false);
+    setLoginName(""); setLoginPass(""); setLoginErr("");
+    setDraftPreds({}); setSent(false);
+  }
 
-  // ─── Tela de Login ──────────────────────────────────────────────────────────
-  if (!user) {
+  // Auto-login salvo
+  useEffect(() => {
+    try {
+      const u = localStorage.getItem("br26_user");
+      const p = localStorage.getItem("br26_pass");
+      if (!u || !p) return;
+      if (u==="admin" && p===ADMIN_PASS) { setIsAdmin(true); setPlayer({id:"admin",name:"ADMIN"}); setTab("admin"); return; }
+      const found = PLAYERS.find(pl => pl.id===u && PASSWORDS[pl.id]===p);
+      if (found) { setPlayer(found); setTab("jogos"); }
+    } catch {}
+  }, []);
+
+  async function handleSend() {
+    if (!player || saving) return;
+    setSaving(true);
+    try {
+      await set(DB.preds(player.id), draftPreds);
+      setSent(true);
+    } catch { alert("Erro ao salvar. Tente novamente."); }
+    finally { setSaving(false); }
+  }
+
+  function setPred(matchId, field, val) {
+    setSent(false);
+    setDraftPreds(p => ({ ...p, [matchId]: { ...(p[matchId]||{}), [field]: val } }));
+  }
+
+  async function setResult(matchId, field, val) {
+    const updated = { ...results, [matchId]: { ...(results[matchId]||{}), [field]: val } };
+    setResults(updated);
+    await set(DB.results(), updated);
+  }
+
+  async function setPayment(pid, status) {
+    const updated = { ...payments, [pid]: status };
+    setPayments(updated);
+    await set(DB.payments(), updated);
+  }
+
+  async function setChampionTeam(team) {
+    setChampion(team);
+    await set(DB.champion(), team);
+  }
+
+  // ── Ranking ───────────────────────────────────────────────────────────────
+  const ranking = PLAYERS.map(p => {
+    const preds = savedPreds[p.id] || {};
+    let pts=0, exact=0, correct=0, total=0;
+    MATCHES.forEach(m => {
+      const real = results[m.id];
+      if (!real || real.home==null || real.home==="") return;
+      total++;
+      const pred = preds[m.id];
+      const score = calcPts(pred, real);
+      if (score > 0) { pts += score; if(score===25) exact++; if(score>=10) correct++; }
+    });
+    // Campeão
+    const tg = tableGuesses[p.id] || {};
+    if (champion && tg[1]===champion) pts += 100;
+    return { ...p, pts, exact, correct, total };
+  }).sort((a,b) => b.pts-a.pts || b.exact-a.exact);
+
+  // ── Login screen ──────────────────────────────────────────────────────────
+  if (!player) {
     return (
-      <div style={styles.loginPage}>
-        <div style={styles.loginBg}>
-          {/* Field lines SVG */}
-          <svg style={styles.fieldSvg} viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-            <rect width="400" height="400" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2"/>
-            <circle cx="200" cy="200" r="80" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2"/>
-            <line x1="200" y1="0" x2="200" y2="400" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
-            <rect x="50" y="140" width="100" height="120" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2"/>
-            <rect x="250" y="140" width="100" height="120" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2"/>
-            <rect x="70" y="165" width="40" height="70" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
-            <rect x="290" y="165" width="40" height="70" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
-          </svg>
-        </div>
-
-        <div style={styles.loginCard}>
-          {/* Logo Brasileirão */}
-          <div style={styles.loginLogo}>
-            <img src="/logo-brasileirao.png" alt="Brasileirão" style={{width:80,height:80,objectFit:"contain"}}
-              onError={(e) => { e.target.style.display="none"; }}/>
-            <div style={styles.loginTitle}>BOLÃO</div>
-            <div style={styles.loginSubtitle}>BRASILEIRÃO SÉRIE A 2026</div>
+      <div style={{ minHeight:"100vh", background:G.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Segoe UI',sans-serif", position:"relative", overflow:"hidden" }}>
+        {/* Campo de futebol SVG */}
+        <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:.07 }} viewBox="0 0 400 600">
+          <rect x="20" y="20" width="360" height="560" fill="none" stroke="#00d4aa" strokeWidth="2"/>
+          <line x1="20" y1="300" x2="380" y2="300" stroke="#00d4aa" strokeWidth="1"/>
+          <circle cx="200" cy="300" r="60" fill="none" stroke="#00d4aa" strokeWidth="1"/>
+          <rect x="100" y="20" width="200" height="80" fill="none" stroke="#00d4aa" strokeWidth="1"/>
+          <rect x="100" y="500" width="200" height="80" fill="none" stroke="#00d4aa" strokeWidth="1"/>
+          <rect x="150" y="20" width="100" height="35" fill="none" stroke="#00d4aa" strokeWidth="1"/>
+          <rect x="150" y="545" width="100" height="35" fill="none" stroke="#00d4aa" strokeWidth="1"/>
+        </svg>
+        <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:20, padding:"36px 28px", width:"100%", maxWidth:340, position:"relative", zIndex:1, boxShadow:`0 20px 60px #00000066` }}>
+          <div style={{ textAlign:"center", marginBottom:28 }}>
+            <div style={{ fontSize:48, marginBottom:4 }}>🇧🇷</div>
+            <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:24, fontWeight:900, color:G.text, letterSpacing:4 }}>BOLÃO</div>
+            <div style={{ fontSize:10, color:G.accent, letterSpacing:3, fontWeight:700, marginTop:4 }}>BRASILEIRÃO SÉRIE A 2026</div>
           </div>
-
-          {savedLogin && (
-            <div style={styles.welcomeBack}>
-              <p style={{margin:"0 0 10px",color:"#aaa",fontSize:13}}>Bem-vindo de volta!</p>
-              <button style={styles.btnWelcome} onClick={() => {
-                setLoginUser(savedLogin.username);
-                setLoginPass(CREDENTIALS[savedLogin.username]);
-                handleLogin(savedLogin.username);
-              }}>
-                Entrar como <strong>{savedLogin.username}</strong>
-              </button>
-              <p style={{margin:"12px 0 0",color:"#666",fontSize:12,cursor:"pointer"}}
-                onClick={() => setSavedLogin(null)}>Trocar conta</p>
-            </div>
-          )}
-
-          {!savedLogin && (
-            <>
-              <input
-                style={styles.input} type="text" placeholder="Usuário"
-                value={loginUser} onChange={e => setLoginUser(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleLogin()}
-              />
-              <input
-                style={styles.input} type="password" placeholder="Senha"
-                value={loginPass} onChange={e => setLoginPass(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleLogin()}
-              />
-              {loginError && <p style={styles.error}>{loginError}</p>}
-              <button style={styles.btnLogin} onClick={() => handleLogin()}>Entrar</button>
-            </>
-          )}
+          {/* Salvo? */}
+          {(() => {
+            try {
+              const u=localStorage.getItem("br26_user"), p=localStorage.getItem("br26_pass");
+              if (u && p && (u==="admin" || PLAYERS.find(pl=>pl.id===u))) {
+                const nm = u==="admin" ? "ADMIN" : PLAYERS.find(pl=>pl.id===u)?.name;
+                return (
+                  <div style={{ textAlign:"center", marginBottom:16 }}>
+                    <div style={{ fontSize:12, color:G.muted, marginBottom:10 }}>Bem-vindo de volta!</div>
+                    <button onClick={handleLogin} style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:`linear-gradient(135deg,${G.accent},#00b894)`, color:"#0a0e1a", fontSize:14, fontWeight:900, cursor:"pointer", letterSpacing:1 }}
+                      onMouseEnter={() => { setLoginName(u); setLoginPass(p); }}>
+                      ENTRAR COMO {nm}
+                    </button>
+                    <div style={{ fontSize:11, color:G.muted, marginTop:10, cursor:"pointer" }}
+                      onClick={() => { try{localStorage.removeItem("br26_user");localStorage.removeItem("br26_pass");}catch{} setLoginName(""); setLoginPass(""); window.location.reload(); }}>
+                      Trocar conta
+                    </div>
+                  </div>
+                );
+              }
+            } catch {}
+            return null;
+          })()}
+          <input value={loginName} onChange={e=>setLoginName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+            placeholder="Usuário" style={{ width:"100%", padding:"12px 14px", marginBottom:10, background:G.card2, border:`1px solid ${G.border}`, borderRadius:10, color:G.text, fontSize:14, boxSizing:"border-box", outline:"none" }}/>
+          <input value={loginPass} onChange={e=>setLoginPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+            type="password" placeholder="Senha" style={{ width:"100%", padding:"12px 14px", marginBottom:16, background:G.card2, border:`1px solid ${G.border}`, borderRadius:10, color:G.text, fontSize:14, boxSizing:"border-box", outline:"none" }}/>
+          {loginErr && <div style={{ color:G.danger, fontSize:12, marginBottom:10, textAlign:"center" }}>{loginErr}</div>}
+          <button onClick={handleLogin} style={{ width:"100%", padding:"14px", borderRadius:12, border:"none", background:`linear-gradient(135deg,${G.accent},#00b894)`, color:"#0a0e1a", fontSize:15, fontWeight:900, cursor:"pointer", letterSpacing:1, boxShadow:`0 4px 16px ${G.accent}44` }}>
+            ENTRAR
+          </button>
         </div>
       </div>
     );
   }
 
-  // ─── App Principal ──────────────────────────────────────────────────────────
-  const rounds = [1,...Array.from({length:38},(_,i)=>i+1)];
-  const currentRound = Math.max(...MATCHES.filter(m => results[m.id] !== undefined && results[m.id] !== null).map(m => m.round), 1);
-  const displayRound = filterRound === "all" ? "all" : Number(filterRound);
-  const filteredMatches = displayRound === "all" ? MATCHES : MATCHES.filter(m => m.round === displayRound);
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  const tabs = isAdmin
+    ? [{id:"admin",label:"⚙️ Admin"}]
+    : [{id:"jogos",label:"⚽ Jogos"},{id:"todos",label:"👁 Todos"},{id:"ranking",label:"🏆 Ranking"},{id:"stats",label:"📈 Stats"},{id:"infos",label:"ℹ️ Infos"}];
 
   return (
-    <div style={styles.app}>
+    <div style={{ minHeight:"100vh", background:G.bg, fontFamily:"'Segoe UI',sans-serif", color:G.text, maxWidth:480, margin:"0 auto" }}>
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <div style={styles.headerTitle}>⚽ Bolão Brasileirão 2026</div>
-          <div style={styles.headerUser}>{user === ADMIN ? "👑 Admin" : `@${user}`}</div>
+      <div style={{ background:G.card, borderBottom:`1px solid ${G.border}`, padding:"10px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 }}>
+        <div>
+          <div style={{ fontWeight:800, fontSize:14, color:G.text }}>🇧🇷 Bolão Brasileirão 2026</div>
+          <div style={{ fontSize:11, color:G.muted }}>{isAdmin?"👑 Admin":`@${player.id} — ${player.name}`}</div>
         </div>
-        <button style={styles.btnLogout} onClick={handleLogout}>Sair</button>
+        <button onClick={handleLogout} style={{ background:G.card2, border:`1px solid ${G.border}`, color:G.muted, borderRadius:8, padding:"6px 12px", fontSize:12, cursor:"pointer" }}>Sair</button>
       </div>
-
-      {/* Tabs */}
-      <div style={styles.tabs}>
-        {[
-          {id:"jogos", label:"🗓 Jogos"},
-          {id:"ranking", label:"🏆 Ranking"},
-          {id:"tabela", label:"📊 Tabela Final"},
-          ...(user === ADMIN ? [{id:"admin", label:"⚙️ Admin"}] : []),
-        ].map(t => (
-          <button key={t.id} style={{...styles.tab, ...(tab===t.id ? styles.tabActive : {})}}
-            onClick={() => setTab(t.id)}>{t.label}</button>
+      {/* Tab bar */}
+      <div style={{ display:"flex", background:G.card, borderBottom:`1px solid ${G.border}`, overflowX:"auto" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:"11px 6px", background:"none", border:"none", color:tab===t.id?G.accent:G.muted, fontSize:12, cursor:"pointer", fontWeight:tab===t.id?800:600, borderBottom:tab===t.id?`2px solid ${G.accent}`:"2px solid transparent", whiteSpace:"nowrap", minWidth:60, transition:"all .15s" }}>
+            {t.label}
+          </button>
         ))}
       </div>
 
-      <div style={styles.content}>
+      <div style={{ padding:"0 0 80px" }}>
 
-        {/* ── JOGOS ────────────────────────────────────────────────────────── */}
-        {tab === "jogos" && (
-          <div>
-            {/* Filtro de Rodada */}
-            <div style={styles.roundFilter}>
-              <select style={styles.select} value={filterRound} onChange={e => setFilterRound(e.target.value)}>
-                <option value="all">Todas as Rodadas</option>
-                {Array.from({length:38},(_,i)=>i+1).map(r => (
-                  <option key={r} value={r}>Rodada {r}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Agrupar por rodada */}
-            {Array.from(new Set(filteredMatches.map(m => m.round))).map(round => (
-              <div key={round} style={styles.roundGroup}>
-                <div style={styles.roundHeader}>
-                  <span>Rodada {round}</span>
-                  <span style={{fontSize:12,opacity:.7}}>
-                    {formatDate(filteredMatches.find(m=>m.round===round)?.date || "")}
-                  </span>
-                </div>
-
-                {filteredMatches.filter(m => m.round === round).map(match => {
-                  const real = results[match.id];
-                  const userPred = predictions[match.id];
-                  const locked = isMatchLocked(match);
-                  const pts = user !== ADMIN ? calcPoints(userPred, real) : null;
-
-                  return (
-                    <MatchCard
-                      key={match.id}
-                      match={match}
-                      real={real}
-                      userPred={userPred}
-                      locked={locked}
-                      pts={pts}
-                      isAdmin={user === ADMIN}
-                      onSavePred={savePrediction}
-                      onSaveResult={saveResult}
-                      allPredictions={allPredictions}
-                      players={PLAYERS}
-                    />
-                  );
-                })}
-              </div>
-            ))}
+      {/* ══ ABA JOGOS ══ */}
+      {tab==="jogos" && !isAdmin && (
+        <div>
+          {/* Seletor de rodadas */}
+          <div ref={stripRef} style={{ display:"flex", gap:6, overflowX:"auto", padding:"12px 12px 8px", scrollbarWidth:"none" }}>
+            {ROUNDS.map(r => {
+              const done = matchesByRound[r].every(m => results[m.id]?.home!=null && results[m.id]?.home!=="");
+              const isA = r===activeRound;
+              return (
+                <button key={r} data-round={r} onClick={()=>setActiveRound(r)}
+                  style={{ flexShrink:0, padding:"6px 11px", borderRadius:8, border:`2px solid ${isA?G.accent:G.border}`,
+                    background:isA?G.accent+"22":G.card, color:isA?G.accent:G.muted,
+                    fontSize:11, fontWeight:800, cursor:"pointer", position:"relative" }}>
+                  R{r}
+                  {done && <span style={{ position:"absolute", top:-3, right:-3, background:G.success, borderRadius:"50%", width:7, height:7, display:"block" }}/>}
+                </button>
+              );
+            })}
           </div>
-        )}
 
-        {/* ── RANKING ──────────────────────────────────────────────────────── */}
-        {tab === "ranking" && (
-          <div>
-            <div style={styles.rankingCard}>
-              <div style={styles.rankingHeader}>
-                <span style={{flex:.5,fontWeight:700,color:"#888"}}>#</span>
-                <span style={{flex:2,fontWeight:700,color:"#888"}}>Jogador</span>
-                <span style={{flex:1,fontWeight:700,color:"#888",textAlign:"center"}}>Pts</span>
-                <span style={{flex:1,fontWeight:700,color:"#888",textAlign:"center"}}>Exatos</span>
-                <span style={{flex:1,fontWeight:700,color:"#888",textAlign:"center"}}>Acertos</span>
-              </div>
-              {ranking.map((r, i) => (
-                <div key={r.player} style={{
-                  ...styles.rankingRow,
-                  background: r.player === user ? "rgba(0,200,100,0.08)" : "transparent",
-                  borderLeft: r.player === user ? "3px solid #00c864" : "3px solid transparent",
-                }}>
-                  <span style={{flex:.5,fontWeight:700,fontSize:18,color:i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":"#666"}}>
-                    {i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1}
-                  </span>
-                  <span style={{flex:2,fontWeight:600,color:"#fff",fontSize:15,textTransform:"capitalize"}}>{r.player}</span>
-                  <span style={{flex:1,textAlign:"center",fontWeight:700,fontSize:18,color:"#00c864"}}>{r.points}</span>
-                  <span style={{flex:1,textAlign:"center",color:"#aaa"}}>{r.exact}</span>
-                  <span style={{flex:1,textAlign:"center",color:"#aaa"}}>{r.correct}</span>
-                </div>
-              ))}
+          {/* Jogos da rodada */}
+          <div style={{ padding:"0 8px" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12, marginTop:4 }}>
+              <div style={{ flex:1, height:1, background:G.border }}/>
+              <div style={{ fontSize:12, fontWeight:800, color:G.accent, letterSpacing:1 }}>RODADA {activeRound}</div>
+              <div style={{ flex:1, height:1, background:G.border }}/>
             </div>
-
-            {/* Comparativo de palpites por jogo */}
-            <div style={{marginTop:20}}>
-              <h3 style={{color:"#fff",padding:"0 16px"}}>Comparativo de Palpites</h3>
-              {MATCHES.filter(m => results[m.id] && results[m.id].homeScore !== null)
-                .slice(-20).reverse().map(match => {
-                const real = results[match.id];
-                return (
-                  <div key={match.id} style={styles.compareCard}>
-                    <div style={styles.compareHeader}>
-                      <span style={{color:"#888",fontSize:12}}>R{match.round}</span>
-                      <span style={{color:"#fff",fontWeight:600,fontSize:13}}>
-                        {match.home} {real.homeScore} × {real.awayScore} {match.away}
-                      </span>
+            {(matchesByRound[activeRound]||[]).map(m => {
+              const real = results[m.id] || {};
+              const pred = draftPreds[m.id] || {};
+              const locked = isLocked(m);
+              const hasResult = real.home!=null && real.home!=="";
+              const pts = hasResult ? calcPts(pred, real) : null;
+              const ptColor = pts===25?G.success:pts>=15?"#3b82f6":pts>=10?G.warn:pts>0?G.danger:G.muted;
+              return (
+                <div key={m.id} style={{ background:G.card, border:`1px solid ${hasResult&&pts!==null?ptColor+"55":G.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8 }}>
+                  <div style={{ fontSize:11, color:G.muted, marginBottom:6 }}>{fmtDate(m.date)}</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    {/* Casa */}
+                    <div style={{ flex:1, display:"flex", alignItems:"center", gap:5 }}>
+                      <div style={teamDot(m.home)}/>
+                      <span style={{ fontSize:12, fontWeight:700, color:G.text }}>{m.home}</span>
                     </div>
-                    <div style={styles.compareRow}>
+                    {/* Placar */}
+                    <div style={{ minWidth:120, display:"flex", justifyContent:"center" }}>
+                      {hasResult ? (
+                        <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.text, background:G.card2, padding:"4px 16px", borderRadius:8 }}>
+                          {real.home} — {real.away}
+                        </div>
+                      ) : (
+                        <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                          <input type="number" min="0" max="20" value={pred.home??""} onChange={e=>setPred(m.id,"home",e.target.value)} disabled={locked}
+                            style={{ width:40, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:8, padding:"6px 2px", fontSize:16, fontWeight:800, outline:"none" }}/>
+                          <span style={{ color:G.muted }}>×</span>
+                          <input type="number" min="0" max="20" value={pred.away??""} onChange={e=>setPred(m.id,"away",e.target.value)} disabled={locked}
+                            style={{ width:40, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:8, padding:"6px 2px", fontSize:16, fontWeight:800, outline:"none" }}/>
+                        </div>
+                      )}
+                    </div>
+                    {/* Visitante */}
+                    <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"flex-end", gap:5 }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:G.text }}>{m.away}</span>
+                      <div style={teamDot(m.away)}/>
+                    </div>
+                  </div>
+                  {/* Footer */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8, paddingTop:6, borderTop:`1px solid ${G.border}33` }}>
+                    <span style={{ fontSize:11, color:G.muted }}>
+                      {pred.home!=null&&pred.home!==""?`Palpite: ${pred.home}×${pred.away}`:locked?"🔒 Encerrado":"Sem palpite"}
+                    </span>
+                    {pts!==null && (
+                      <span style={{ fontWeight:800, fontSize:13, color:ptColor }}>
+                        {pts===25?"🎯 ":pts>=10?"✅ ":"❌ "}{pts}pts
+                      </span>
+                    )}
+                  </div>
+                  {/* Mini palpites após resultado */}
+                  {hasResult && (
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:6, paddingTop:6, borderTop:`1px solid ${G.border}22` }}>
                       {PLAYERS.map(p => {
-                        const pred = allPredictions[p]?.[match.id];
-                        const pts = calcPoints(pred, real);
+                        const pp = savedPreds[p.id]?.[m.id];
+                        const pp2 = calcPts(pp, real);
+                        const bg = pp2===25?"#14532d":pp2>=15?"#1e3a8a":pp2>=10?"#78350f":pp2>0?"#7f1d1d":G.card2;
                         return (
-                          <div key={p} style={{...styles.comparePlayer, background: pts===25?"#00c864":pts>=15?"#3b82f6":pts>=10?"#f59e0b":pts>0?"#6b7280":"#1a1a1a"}}>
-                            <div style={{fontSize:11,color:"rgba(255,255,255,0.8)",textTransform:"capitalize"}}>{p}</div>
-                            <div style={{fontWeight:700,color:"#fff",fontSize:13}}>
-                              {pred ? `${pred.homeScore}-${pred.awayScore}` : "-"}
-                            </div>
-                            <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",fontWeight:600}}>
-                              {pts !== null ? `${pts}pts` : "-"}
-                            </div>
+                          <div key={p.id} style={{ background:bg, borderRadius:6, padding:"2px 7px", textAlign:"center", minWidth:48 }}>
+                            <div style={{ fontSize:9, color:"rgba(255,255,255,.6)" }}>{p.name}</div>
+                            <div style={{ fontSize:11, fontWeight:700, color:G.text }}>{pp?.home!=null?`${pp.home}-${pp.away}`:"—"}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {/* Botão Enviar */}
+            <div style={{ marginTop:20 }}>
+              <button onClick={!isLocked(matchesByRound[activeRound]?.[0])||false ? handleSend : undefined}
+                disabled={saving||sent}
+                style={{ width:"100%", padding:"16px", borderRadius:12, border:"none",
+                  background:sent?G.success:`linear-gradient(135deg,${G.accent},#00b894)`,
+                  color:"#0a0e1a", fontSize:14, fontWeight:900, cursor:"pointer", letterSpacing:1,
+                  boxShadow:`0 4px 16px ${G.accent}44` }}>
+                {saving?"💾 SALVANDO...":sent?"✅ PALPITES SALVOS":"📤 SALVAR PALPITES"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ ABA TODOS ══ */}
+      {tab==="todos" && (
+        <div style={{ padding:"12px 8px" }}>
+          <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent, marginBottom:14, letterSpacing:1 }}>👁 TODOS OS PALPITES</div>
+          {ROUNDS.filter(r => matchesByRound[r].some(m => {
+            const real=results[m.id]; return real?.home!=null && real?.home!=="";
+          })).reverse().map(r => (
+            <div key={r} style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:G.muted, letterSpacing:1, marginBottom:10 }}>RODADA {r}</div>
+              {matchesByRound[r].map(m => {
+                const real = results[m.id];
+                if (!real || real.home==null || real.home==="") return null;
+                return (
+                  <div key={m.id} style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:10, padding:"10px 12px", marginBottom:6 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                      <span style={{ fontSize:11, color:G.muted }}>{fmtDate(m.date)}</span>
+                      <span style={{ fontWeight:800, fontSize:13, color:G.text }}>{m.home} {real.home}×{real.away} {m.away}</span>
+                    </div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                      {PLAYERS.map(p => {
+                        const pp = savedPreds[p.id]?.[m.id];
+                        const pts = calcPts(pp, real);
+                        const bg = pts===25?"#14532d":pts>=15?"#1e3a8a":pts>=10?"#78350f":pts>0?"#7f1d1d":G.card2;
+                        const isMe = p.id===player?.id;
+                        return (
+                          <div key={p.id} style={{ background:bg, borderRadius:8, padding:"4px 10px", minWidth:60, textAlign:"center", border:isMe?`1px solid ${G.accent}44`:"none" }}>
+                            <div style={{ fontSize:10, color:isMe?G.accent:"rgba(255,255,255,.6)", fontWeight:isMe?800:600 }}>{p.name}</div>
+                            <div style={{ fontWeight:700, color:G.text, fontSize:12 }}>{pp?.home!=null?`${pp.home}-${pp.away}`:"—"}</div>
+                            <div style={{ fontSize:10, color:"rgba(255,255,255,.8)", fontWeight:700 }}>{pts!==null?`${pts}pts`:""}</div>
                           </div>
                         );
                       })}
@@ -807,442 +668,318 @@ export default function App() {
                 );
               })}
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* ══ ABA RANKING ══ */}
+      {tab==="ranking" && (
+        <div style={{ padding:"12px 8px" }}>
+          <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.gold, marginBottom:14, letterSpacing:1 }}>🏆 CLASSIFICAÇÃO</div>
+          {ranking.map((p,i) => (
+            <div key={p.id} style={{ background:G.card, border:`1px solid ${p.id===player?.id?G.accent+"44":G.border}`, borderRadius:12, padding:"14px 16px", marginBottom:8, display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ fontSize:22, minWidth:28 }}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:800, fontSize:14, color:p.id===player?.id?G.accent:G.text }}>{p.name}</div>
+                <div style={{ fontSize:11, color:G.muted, marginTop:2 }}>{p.exact} exatos · {p.correct} acertos · {p.total} jogos</div>
+              </div>
+              <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:24, fontWeight:900, color:i===0?G.gold:G.text }}>{p.pts}</div>
+            </div>
+          ))}
+          {/* Palpite campeão */}
+          <div style={{ background:G.card, border:`1px solid ${G.gold}33`, borderRadius:12, padding:16, marginTop:8 }}>
+            <div style={{ fontSize:12, fontWeight:800, color:G.gold, letterSpacing:1, marginBottom:12 }}>🏆 PALPITE CAMPEÃO (100 pts)</div>
+            {PLAYERS.map(p => (
+              <div key={p.id} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:`1px solid ${G.border}22` }}>
+                <span style={{ fontSize:12, fontWeight:700, color:p.id===player?.id?G.accent:G.text }}>{p.name}</span>
+                <span style={{ fontSize:12, color:G.gold }}>{tableGuesses[p.id]?.[1] || "—"}</span>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ── TABELA FINAL ─────────────────────────────────────────────────── */}
-        {tab === "tabela" && (
-          <div style={{padding:"0 8px"}}>
-            <div style={styles.card}>
-              <h3 style={{color:"#fff",margin:"0 0 16px"}}>
-                🏆 Palpite: Classificação Final
-              </h3>
-              <p style={{color:"#888",fontSize:13,margin:"0 0 16px"}}>
-                Acerte cada posição e ganhe 10 pts por colocação correta + 100 pts se acertar o campeão!
-              </p>
+      {/* ══ ABA STATS ══ */}
+      {tab==="stats" && (
+        <div style={{ padding:"12px 8px" }}>
+          <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent2, marginBottom:14, letterSpacing:1 }}>📈 ESTATÍSTICAS</div>
 
-              {user !== ADMIN ? (
-                <div>
-                  {TEAMS.map((_, i) => {
-                    const pos = i + 1;
-                    return (
-                      <div key={pos} style={styles.tableRow}>
-                        <div style={styles.tablePos}>
-                          {pos <= 4 ? "🟢" : pos >= 17 ? "🔴" : "⚪"} {pos}º
-                        </div>
-                        <select
-                          style={styles.tableSelect}
-                          value={tableGuesses[pos] || ""}
-                          onChange={e => saveTableGuess(pos, e.target.value)}
-                        >
-                          <option value="">-- Escolha --</option>
-                          {TEAMS.map(t => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </div>
-                    );
+          {/* Gráfico acumulado */}
+          {(() => {
+            const played = MATCHES.filter(m => { const r=results[m.id]; return r?.home!=null&&r?.home!==""; });
+            if (played.length===0) return <div style={{ color:G.muted, fontSize:13, padding:20, textAlign:"center" }}>Aguardando resultados...</div>;
+            const colors = ["#00d4aa","#ff6b35","#ffd700","#8b5cf6","#ef4444","#3b82f6","#22c55e"];
+            const data = PLAYERS.map((p,i) => {
+              let cum=0;
+              const pts = played.map(m => {
+                const pp=savedPreds[p.id]?.[m.id], rr=results[m.id];
+                const s=calcPts(pp,rr)||0; cum+=s; return cum;
+              });
+              return { ...p, pts, color:colors[i] };
+            });
+            const maxPts = Math.max(...data.flatMap(d=>d.pts), 1);
+            const W=340, H=160, pL=32, pR=8, pT=10, pB=20;
+            const iW=W-pL-pR, iH=H-pT-pB;
+            const xp=(i)=>pL+i*(iW/(played.length-1||1));
+            const yp=(v)=>pT+iH-(v/maxPts)*iH;
+            return (
+              <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14 }}>
+                <div style={{ fontWeight:900, fontSize:14, color:G.text, marginBottom:4 }}>📊 EVOLUÇÃO DE PONTOS</div>
+                <div style={{ fontSize:11, color:G.muted, marginBottom:12 }}>{played.length} partida{played.length!==1?"s":""} jogada{played.length!==1?"s":""}</div>
+                <svg width="100%" viewBox={`0 0 ${W} ${H}`}>
+                  {[0,.25,.5,.75,1].map(f => (
+                    <g key={f}>
+                      <line x1={pL} y1={pT+iH*f} x2={W-pR} y2={pT+iH*f} stroke={G.border} strokeWidth=".5"/>
+                      <text x={pL-3} y={pT+iH*f+3} fill={G.muted} fontSize="7" textAnchor="end">{Math.round(maxPts*(1-f))}</text>
+                    </g>
+                  ))}
+                  {data.map(d => (
+                    <polyline key={d.id} points={d.pts.map((v,i)=>`${xp(i)},${yp(v)}`).join(" ")}
+                      fill="none" stroke={d.color} strokeWidth={d.id===player?.id?2.5:1.5} strokeLinejoin="round"/>
+                  ))}
+                  {data.map(d => {
+                    const last=d.pts[d.pts.length-1];
+                    return <circle key={d.id} cx={xp(played.length-1)} cy={yp(last)} r={d.id===player?.id?4:2.5} fill={d.color}/>;
                   })}
-                </div>
-              ) : (
-                <div>
-                  <p style={{color:"#888",fontSize:13}}>Palpites de tabela dos jogadores:</p>
-                  {PLAYERS.map(p => (
-                    <div key={p} style={{marginBottom:16}}>
-                      <div style={{color:"#fff",fontWeight:600,textTransform:"capitalize",marginBottom:6}}>{p}</div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                        {TEAMS.map((_,i) => {
-                          const guess = allTableGuesses[p]?.[i+1];
-                          return (
-                            <div key={i} style={{...styles.tableChip, background: i===0&&guess===champion?"#FFD700":i<4?"#1a3a1a":i>=16?"#3a1a1a":"#1a1a2e"}}>
-                              <span style={{color:"#888",fontSize:10}}>{i+1}º</span>
-                              <span style={{color:"#fff",fontSize:12}}>{guess||"—"}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                </svg>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:"6px 14px", marginTop:8 }}>
+                  {data.map(d => (
+                    <div key={d.id} style={{ display:"flex", alignItems:"center", gap:5 }}>
+                      <div style={{ width:14, height:3, background:d.color, borderRadius:2 }}/>
+                      <span style={{ fontSize:11, fontWeight:d.id===player?.id?800:600, color:d.id===player?.id?G.accent:G.muted }}>{d.name}</span>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── ADMIN ────────────────────────────────────────────────────────── */}
-        {tab === "admin" && user === ADMIN && (
-          <div style={{padding:"0 8px"}}>
-            <div style={styles.card}>
-              <h3 style={{color:"#fff",margin:"0 0 16px"}}>⚙️ Painel Admin</h3>
-
-              {/* Campeão */}
-              <div style={{marginBottom:24}}>
-                <label style={{color:"#aaa",fontSize:13,display:"block",marginBottom:8}}>🏆 Campeão Final:</label>
-                <select style={styles.select} value={champion} onChange={e => saveChampion(e.target.value)}>
-                  <option value="">-- Ainda não definido --</option>
-                  {TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                {champion && <p style={{color:"#FFD700",fontWeight:700,marginTop:8}}>🏆 Campeão: {champion}</p>}
               </div>
+            );
+          })()}
 
-              {/* Resultados por rodada */}
-              <h4 style={{color:"#fff",marginBottom:12}}>Inserir Resultados</h4>
-              <div style={styles.roundFilter}>
-                <select style={styles.select} value={filterRound} onChange={e => setFilterRound(e.target.value)}>
-                  <option value="all">Todas as Rodadas</option>
-                  {Array.from({length:38},(_,i)=>i+1).map(r => (
-                    <option key={r} value={r}>Rodada {r}</option>
-                  ))}
-                </select>
-              </div>
-
-              {filteredMatches.map(match => {
-                const real = results[match.id] || {};
-                return (
-                  <div key={match.id} style={styles.adminMatchRow}>
-                    <span style={{color:"#888",fontSize:11}}>R{match.round}</span>
-                    <span style={{color:"#fff",fontSize:13,flex:1,textAlign:"center"}}>
-                      {match.home} × {match.away}
-                    </span>
-                    <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <input type="number" min="0" max="20" style={styles.scoreInput}
-                        value={editingResult[`${match.id}_h`] ?? (real.homeScore ?? "")}
-                        onChange={e => setEditingResult(p => ({...p,[`${match.id}_h`]:e.target.value}))}
-                      />
-                      <span style={{color:"#fff"}}>×</span>
-                      <input type="number" min="0" max="20" style={styles.scoreInput}
-                        value={editingResult[`${match.id}_a`] ?? (real.awayScore ?? "")}
-                        onChange={e => setEditingResult(p => ({...p,[`${match.id}_a`]:e.target.value}))}
-                      />
-                      <button style={styles.btnSave} onClick={() => {
-                        const h = editingResult[`${match.id}_h`] ?? real.homeScore;
-                        const a = editingResult[`${match.id}_a`] ?? real.awayScore;
-                        if (h !== "" && h !== undefined && a !== "" && a !== undefined) {
-                          saveResult(match.id, h, a);
-                        }
-                      }}>✓</button>
+          {/* Rei do placar exato */}
+          {(() => {
+            const played = MATCHES.filter(m => { const r=results[m.id]; return r?.home!=null&&r?.home!==""; });
+            const exactRank = PLAYERS.map(p => {
+              let exact=0, total=0;
+              played.forEach(m => { const pp=savedPreds[p.id]?.[m.id], rr=results[m.id]; if(pp?.home!=null) { total++; if(calcPts(pp,rr)===25) exact++; } });
+              return { ...p, exact, total, pct:total?Math.round(exact/total*100):0 };
+            }).sort((a,b)=>b.pct-a.pct||b.exact-a.exact);
+            return (
+              <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14 }}>
+                <div style={{ fontWeight:900, fontSize:14, color:G.gold, marginBottom:4 }}>🎯 REI DO PLACAR EXATO</div>
+                <div style={{ fontSize:11, color:G.muted, marginBottom:14 }}>% de palpites com placar exato</div>
+                {exactRank.map((p,i) => (
+                  <div key={p.id} style={{ marginBottom:10 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                        <span style={{ fontSize:13 }}>{["🥇","🥈","🥉"][i]||""}</span>
+                        <span style={{ fontSize:12, fontWeight:p.id===player?.id?800:600, color:p.id===player?.id?G.accent:G.text }}>{p.name}</span>
+                      </div>
+                      <div><span style={{ fontSize:13, fontWeight:900, color:i===0?G.gold:G.text }}>{p.pct}%</span><span style={{ fontSize:10, color:G.muted, marginLeft:4 }}>({p.exact}/{p.total})</span></div>
+                    </div>
+                    <div style={{ background:G.card2, borderRadius:6, height:6, overflow:"hidden" }}>
+                      <div style={{ width:`${p.pct}%`, height:"100%", background:i===0?G.gold:p.id===player?.id?G.accent:G.muted+"88", borderRadius:6, transition:"width .6s" }}/>
                     </div>
                   </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Taxa de acerto vencedor */}
+          {(() => {
+            const played = MATCHES.filter(m => { const r=results[m.id]; return r?.home!=null&&r?.home!==""; });
+            const winRank = PLAYERS.map(p => {
+              let win=0, total=0;
+              played.forEach(m => { const pp=savedPreds[p.id]?.[m.id], rr=results[m.id]; if(pp?.home!=null) { total++; if(calcPts(pp,rr)>=10) win++; } });
+              return { ...p, win, total, pct:total?Math.round(win/total*100):0 };
+            }).sort((a,b)=>b.pct-a.pct);
+            return (
+              <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14 }}>
+                <div style={{ fontWeight:900, fontSize:14, color:G.success, marginBottom:4 }}>✅ TAXA DE ACERTO — VENCEDOR</div>
+                <div style={{ fontSize:11, color:G.muted, marginBottom:14 }}>% que acertou pelo menos o resultado</div>
+                {winRank.map((p,i) => (
+                  <div key={p.id} style={{ marginBottom:10 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                      <span style={{ fontSize:12, fontWeight:p.id===player?.id?800:600, color:p.id===player?.id?G.accent:G.text }}>{p.name}</span>
+                      <div><span style={{ fontSize:13, fontWeight:900, color:i===0?G.success:G.text }}>{p.pct}%</span><span style={{ fontSize:10, color:G.muted, marginLeft:4 }}>({p.win}/{p.total})</span></div>
+                    </div>
+                    <div style={{ background:G.card2, borderRadius:6, height:6, overflow:"hidden" }}>
+                      <div style={{ width:`${p.pct}%`, height:"100%", background:i===0?G.success:p.id===player?.id?G.accent:G.muted+"88", borderRadius:6, transition:"width .6s" }}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ══ ABA INFOS ══ */}
+      {tab==="infos" && (
+        <div style={{ padding:"12px 8px" }}>
+          <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent, marginBottom:14, letterSpacing:1 }}>ℹ️ INFORMAÇÕES</div>
+
+          {/* Pontuação */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:12 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14, letterSpacing:.8 }}>🎯 SISTEMA DE PONTUAÇÃO</div>
+            {[["25 pts","Placar exato 🎯"],["18 pts","Vencedor + nº de gols do vencedor"],["15 pts","Vencedor + saldo de gols"],["12 pts","Vencedor + gols do perdedor"],["10 pts","Apenas o vencedor / empate"]].map(([pts,desc])=>(
+              <div key={pts} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${G.border}33` }}>
+                <span style={{ fontSize:13, color:G.text }}>{desc}</span>
+                <span style={{ fontSize:13, fontWeight:900, color:G.gold, minWidth:50, textAlign:"right" }}>{pts}</span>
+              </div>
+            ))}
+            <div style={{ marginTop:14, background:G.card2, borderRadius:10, padding:"12px 14px" }}>
+              <div style={{ fontSize:12, fontWeight:800, color:G.gold, marginBottom:8 }}>🏆 PALPITE CAMPEÃO</div>
+              <div style={{ fontSize:12, color:G.text }}>Acertar o campeão do Brasileirão: <strong style={{color:G.gold}}>100 pts</strong></div>
+              <div style={{ fontSize:11, color:G.muted, marginTop:6 }}>Defina na aba Tabela Final</div>
+            </div>
+          </div>
+
+          {/* Regras */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:12 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>📋 REGRAS</div>
+            {[
+              "Salve seus palpites clicando em SALVAR PALPITES a cada rodada",
+              "O prazo encerra 5 minutos antes do início do primeiro jogo da rodada",
+              "Os palpites ficam visíveis a todos após o admin inserir os resultados",
+              "Pontuações são atualizadas em tempo real",
+              "Jogadores: TICO, PEDRO IVO, LUQUINHAS, LAZARO, VINI, DANE, ALEX",
+              "Pausa durante a Copa do Mundo (junho–julho de 2026)",
+            ].map(item => (
+              <div key={item} style={{ display:"flex", gap:8, padding:"7px 0", borderBottom:`1px solid ${G.border}33`, fontSize:13 }}>
+                <span style={{ color:G.accent, flexShrink:0 }}>▸</span>
+                <span style={{ color:G.text, lineHeight:1.5 }}>{item}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Premiação */}
+          <div style={{ background:G.card, border:`1px solid ${G.gold}33`, borderRadius:14, padding:18, marginBottom:12 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.gold, marginBottom:14 }}>🏅 PREMIAÇÃO</div>
+            <div style={{ background:G.gold+"11", border:`1px solid ${G.gold}44`, borderRadius:10, padding:"13px 16px", display:"flex", alignItems:"center", gap:14, marginBottom:8 }}>
+              <span style={{ fontSize:30 }}>🥇</span>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:G.gold }}>Vencedor do Bolão</div>
+                <div style={{ fontSize:12, color:G.text, marginTop:3 }}>Camisa oficial do campeão do Brasileirão 2026</div>
+              </div>
+            </div>
+            <div style={{ background:G.card2, borderRadius:10, padding:"13px 16px", display:"flex", alignItems:"center", gap:14 }}>
+              <span style={{ fontSize:30 }}>🍻</span>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:G.text }}>Restante arrecadado</div>
+                <div style={{ fontSize:12, color:G.muted, marginTop:3 }}>Rateado no próximo encontro</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pagamentos */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:12 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>💰 STATUS DE PAGAMENTOS</div>
+            {PLAYERS.map(p => {
+              const s = payments[p.id] || "pendente";
+              return (
+                <div key={p.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 0", borderBottom:`1px solid ${G.border}33` }}>
+                  <span style={{ fontSize:13, fontWeight:700, color:p.id===player?.id?G.accent:G.text }}>{p.name}</span>
+                  <span style={{ fontSize:11, fontWeight:800, padding:"3px 10px", borderRadius:20, letterSpacing:.8,
+                    background:s==="pago"?G.success+"22":G.warn+"22", color:s==="pago"?G.success:G.warn }}>
+                    {s.toUpperCase()}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Classificação Brasileirão (link) */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:12 }}>📊 CLASSIFICAÇÃO REAL</div>
+            <a href="https://ge.globo.com/futebol/brasileirao-serie-a/" target="_blank" rel="noreferrer"
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", textDecoration:"none" }}>
+              <span style={{ fontSize:13, color:G.text }}>Tabela Brasileirão 2026</span>
+              <span style={{ color:G.accent, fontSize:12 }}>Abrir ↗</span>
+            </a>
+            <a href="https://www.cbf.com.br/futebol-brasileiro/tabelas/campeonato-brasileiro/serie-a" target="_blank" rel="noreferrer"
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", textDecoration:"none", borderTop:`1px solid ${G.border}33` }}>
+              <span style={{ fontSize:13, color:G.text }}>Site Oficial CBF</span>
+              <span style={{ color:G.accent, fontSize:12 }}>Abrir ↗</span>
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* ══ ABA ADMIN ══ */}
+      {tab==="admin" && isAdmin && (
+        <div style={{ padding:"12px 8px" }}>
+          <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent2, marginBottom:14 }}>⚙️ PAINEL DO ADMIN</div>
+
+          {/* Campeão */}
+          <div style={{ background:G.card, border:`1px solid ${G.gold}44`, borderRadius:14, padding:18, marginBottom:14 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.gold, marginBottom:12 }}>🏆 CAMPEÃO DO BRASILEIRÃO</div>
+            <select value={champion} onChange={e=>setChampionTeam(e.target.value)}
+              style={{ width:"100%", padding:"10px 12px", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:10, fontSize:13, cursor:"pointer" }}>
+              <option value="">-- Ainda não definido --</option>
+              {TEAMS.map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+            {champion && <div style={{ color:G.gold, fontWeight:800, marginTop:10 }}>🏆 {champion}</div>}
+          </div>
+
+          {/* Pagamentos */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>💰 PAGAMENTOS</div>
+            {PLAYERS.map(p => (
+              <div key={p.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:`1px solid ${G.border}` }}>
+                <span style={{ fontSize:13, fontWeight:700 }}>{p.name}</span>
+                <div style={{ display:"flex", gap:6 }}>
+                  {["pendente","pago"].map(s => (
+                    <button key={s} onClick={()=>setPayment(p.id,s)}
+                      style={{ padding:"6px 14px", borderRadius:20, border:"none", cursor:"pointer", fontSize:11, fontWeight:800,
+                        background:payments[p.id]===s?(s==="pago"?G.success:G.warn):G.card2,
+                        color:payments[p.id]===s?"#000":G.muted }}>
+                      {s.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Resultados por rodada */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>📝 INSERIR RESULTADOS</div>
+            <div ref={stripRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
+              {ROUNDS.map(r => {
+                const done = matchesByRound[r].every(m => results[m.id]?.home!=null && results[m.id]?.home!=="");
+                return (
+                  <button key={r} data-round={r} onClick={()=>setActiveRound(r)}
+                    style={{ flexShrink:0, padding:"5px 10px", borderRadius:7, border:`2px solid ${r===activeRound?G.accent2:G.border}`,
+                      background:r===activeRound?G.accent2+"22":G.card, color:r===activeRound?G.accent2:G.muted,
+                      fontSize:11, fontWeight:800, cursor:"pointer", position:"relative" }}>
+                    R{r}
+                    {done && <span style={{ position:"absolute", top:-3, right:-3, background:G.success, borderRadius:"50%", width:7, height:7, display:"block" }}/>}
+                  </button>
                 );
               })}
             </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
-}
-
-// ─── Match Card Component ────────────────────────────────────────────────────
-function MatchCard({ match, real, userPred, locked, pts, isAdmin, onSavePred, onSaveResult, allPredictions, players }) {
-  const [ph, setPh] = useState(userPred?.homeScore ?? "");
-  const [pa, setPa] = useState(userPred?.awayScore ?? "");
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    setPh(userPred?.homeScore ?? "");
-    setPa(userPred?.awayScore ?? "");
-  }, [userPred]);
-
-  const handleSave = () => {
-    if (ph === "" || pa === "") return;
-    onSavePred(match.id, ph, pa);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
-  };
-
-  const hasResult = real && real.homeScore !== null && real.awayScore !== null;
-  const hasPred = userPred && userPred.homeScore !== null;
-
-  const ptColor = pts === 25 ? "#00c864" : pts >= 15 ? "#3b82f6" : pts >= 10 ? "#f59e0b" : pts > 0 ? "#ef4444" : "#666";
-
-  return (
-    <div style={{
-      ...styles.matchCard,
-      borderLeft: hasResult && pts !== null ? `3px solid ${ptColor}` : "3px solid #333",
-    }}>
-      <div style={styles.matchDate}>{formatDate(match.date)}</div>
-
-      <div style={styles.matchMain}>
-        {/* Time Casa */}
-        <div style={styles.teamName}>
-          <div style={{...styles.teamDot, background: TEAM_COLORS[match.home] || "#666"}} />
-          {match.home}
-        </div>
-
-        {/* Placar */}
-        <div style={styles.scoreArea}>
-          {hasResult ? (
-            <div style={styles.resultScore}>
-              {real.homeScore} — {real.awayScore}
-            </div>
-          ) : !isAdmin ? (
-            <div style={styles.predInputArea}>
-              <input type="number" min="0" max="20" style={styles.predInput}
-                value={ph} onChange={e => setPh(e.target.value)}
-                disabled={locked}
-              />
-              <span style={{color:"#666"}}>×</span>
-              <input type="number" min="0" max="20" style={styles.predInput}
-                value={pa} onChange={e => setPa(e.target.value)}
-                disabled={locked}
-              />
-              {!locked && (
-                <button style={{...styles.btnSaveSmall, background: saved ? "#00c864" : "#3b82f6"}}
-                  onClick={handleSave}>{saved ? "✓" : "💾"}</button>
-              )}
-            </div>
-          ) : (
-            <div style={{color:"#555",fontSize:12}}>—</div>
-          )}
-        </div>
-
-        {/* Time Visitante */}
-        <div style={{...styles.teamName, justifyContent:"flex-end"}}>
-          {match.away}
-          <div style={{...styles.teamDot, background: TEAM_COLORS[match.away] || "#666"}} />
-        </div>
-      </div>
-
-      {/* Palpite do usuário + pontos */}
-      {!isAdmin && (
-        <div style={styles.matchFooter}>
-          {hasPred ? (
-            <span style={{color:"#666",fontSize:12}}>
-              Seu palpite: {userPred.homeScore} × {userPred.awayScore}
-            </span>
-          ) : locked ? (
-            <span style={{color:"#ef4444",fontSize:12}}>🔒 Encerrado</span>
-          ) : (
-            <span style={{color:"#888",fontSize:12}}>Sem palpite</span>
-          )}
-          {pts !== null && (
-            <span style={{color: ptColor, fontWeight:700, fontSize:14}}>
-              {pts === 25 ? "🎯 " : pts >= 10 ? "✅ " : "❌ "}{pts} pts
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Mini palpites dos outros jogadores (quando resultado disponível) */}
-      {hasResult && !isAdmin && (
-        <div style={styles.miniPreds}>
-          {players.filter(p => p !== "dane" || true).map(p => {
-            const pred = allPredictions[p]?.[match.id];
-            const ppts = calcPoints(pred, real);
-            const pColor = ppts === 25 ? "#00c864" : ppts >= 15 ? "#3b82f6" : ppts >= 10 ? "#f59e0b" : ppts > 0 ? "#ef4444" : "#333";
-            return (
-              <div key={p} style={{...styles.miniPlayer, background: pColor + "22", border: `1px solid ${pColor}33`}}>
-                <span style={{color:"#aaa",fontSize:10,textTransform:"capitalize"}}>{p}</span>
-                <span style={{color:"#fff",fontSize:11,fontWeight:600}}>
-                  {pred ? `${pred.homeScore}-${pred.awayScore}` : "—"}
-                </span>
+            {(matchesByRound[activeRound]||[]).map(m => (
+              <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:`1px solid ${G.border}22` }}>
+                <span style={{ fontSize:11, color:G.muted, minWidth:20 }}>{m.round}</span>
+                <span style={{ fontSize:12, color:G.text, flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.home} × {m.away}</span>
+                <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
+                  <input type="number" min="0" max="20"
+                    value={results[m.id]?.home ?? ""}
+                    onChange={e => setResult(m.id,"home",e.target.value===""?"":Number(e.target.value))}
+                    style={{ width:38, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:7, padding:"5px 2px", fontSize:15, fontWeight:800, outline:"none" }}/>
+                  <span style={{ color:G.muted }}>×</span>
+                  <input type="number" min="0" max="20"
+                    value={results[m.id]?.away ?? ""}
+                    onChange={e => setResult(m.id,"away",e.target.value===""?"":Number(e.target.value))}
+                    style={{ width:38, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:7, padding:"5px 2px", fontSize:15, fontWeight:800, outline:"none" }}/>
+                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       )}
+
+      </div>
     </div>
   );
 }
-
-// ─── Estilos ─────────────────────────────────────────────────────────────────
-const styles = {
-  loginPage: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1628 100%)",
-    position: "relative",
-    overflow: "hidden",
-    fontFamily: "'Segoe UI', sans-serif",
-  },
-  loginBg: {
-    position: "absolute", inset: 0, opacity: 0.4,
-    background: "repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 41px), repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 41px)",
-  },
-  fieldSvg: {
-    position: "absolute", width: "100%", height: "100%", top: 0, left: 0,
-  },
-  loginCard: {
-    background: "rgba(255,255,255,0.05)",
-    backdropFilter: "blur(20px)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 20,
-    padding: "40px 32px",
-    width: "100%",
-    maxWidth: 360,
-    position: "relative",
-    zIndex: 1,
-  },
-  loginLogo: {
-    textAlign: "center", marginBottom: 28,
-    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-  },
-  loginTitle: {
-    fontSize: 28, fontWeight: 900, color: "#fff",
-    letterSpacing: 6, fontFamily: "'Arial Black', sans-serif",
-  },
-  loginSubtitle: {
-    fontSize: 11, color: "#22c55e", letterSpacing: 3, fontWeight: 700,
-  },
-  welcomeBack: { textAlign: "center" },
-  btnWelcome: {
-    background: "linear-gradient(135deg, #22c55e, #16a34a)",
-    color: "#fff", border: "none", borderRadius: 10, padding: "12px 24px",
-    fontSize: 15, cursor: "pointer", fontWeight: 600, width: "100%",
-  },
-  input: {
-    width: "100%", padding: "13px 16px", marginBottom: 12,
-    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 10, color: "#fff", fontSize: 15, boxSizing: "border-box",
-    outline: "none",
-  },
-  error: { color: "#ef4444", fontSize: 13, margin: "0 0 12px", textAlign: "center" },
-  btnLogin: {
-    width: "100%", padding: "14px", background: "linear-gradient(135deg, #22c55e, #16a34a)",
-    color: "#fff", border: "none", borderRadius: 10, fontSize: 16, fontWeight: 700,
-    cursor: "pointer", letterSpacing: 1,
-  },
-  app: {
-    minHeight: "100vh",
-    background: "#0d0d0d",
-    fontFamily: "'Segoe UI', sans-serif",
-    color: "#fff",
-    maxWidth: 600,
-    margin: "0 auto",
-  },
-  header: {
-    background: "linear-gradient(135deg, #064e2a, #0a6b38)",
-    padding: "12px 16px",
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    position: "sticky", top: 0, zIndex: 100,
-  },
-  headerLeft: { display: "flex", flexDirection: "column" },
-  headerTitle: { fontWeight: 800, fontSize: 16, color: "#fff" },
-  headerUser: { fontSize: 12, color: "rgba(255,255,255,0.7)" },
-  btnLogout: {
-    background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
-    color: "#fff", borderRadius: 8, padding: "6px 12px", fontSize: 13, cursor: "pointer",
-  },
-  tabs: {
-    display: "flex", background: "#111", borderBottom: "1px solid #222",
-    overflowX: "auto",
-  },
-  tab: {
-    flex: 1, padding: "12px 8px", background: "none", border: "none",
-    color: "#666", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
-    fontWeight: 600, transition: "all 0.2s",
-  },
-  tabActive: {
-    color: "#22c55e", borderBottom: "2px solid #22c55e",
-  },
-  content: { padding: "0 0 80px" },
-  roundFilter: { padding: "12px 16px" },
-  select: {
-    background: "#1a1a1a", border: "1px solid #333", color: "#fff",
-    padding: "8px 12px", borderRadius: 8, fontSize: 14, width: "100%", cursor: "pointer",
-  },
-  roundGroup: { marginBottom: 4 },
-  roundHeader: {
-    background: "#111", padding: "8px 16px",
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    color: "#22c55e", fontWeight: 700, fontSize: 14, borderBottom: "1px solid #1a1a1a",
-    position: "sticky", top: 58, zIndex: 10,
-  },
-  matchCard: {
-    background: "#111", margin: "4px 8px", borderRadius: 10,
-    padding: "12px 14px", border: "1px solid #1e1e1e",
-  },
-  matchDate: { color: "#555", fontSize: 11, marginBottom: 8 },
-  matchMain: {
-    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-  },
-  teamName: {
-    flex: 1, fontSize: 13, fontWeight: 600, color: "#ddd",
-    display: "flex", alignItems: "center", gap: 6,
-  },
-  teamDot: { width: 8, height: 8, borderRadius: "50%", flexShrink: 0 },
-  scoreArea: {
-    display: "flex", justifyContent: "center", minWidth: 120,
-  },
-  resultScore: {
-    fontSize: 20, fontWeight: 800, color: "#fff",
-    background: "#1a1a1a", padding: "4px 16px", borderRadius: 8,
-  },
-  predInputArea: {
-    display: "flex", alignItems: "center", gap: 4,
-  },
-  predInput: {
-    width: 42, textAlign: "center", background: "#1a1a1a",
-    border: "1px solid #333", color: "#fff", borderRadius: 6,
-    padding: "5px 4px", fontSize: 16, fontWeight: 700,
-  },
-  btnSaveSmall: {
-    padding: "5px 8px", border: "none", borderRadius: 6, cursor: "pointer",
-    color: "#fff", fontSize: 14, fontWeight: 700,
-  },
-  matchFooter: {
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    marginTop: 8, paddingTop: 8, borderTop: "1px solid #1a1a1a",
-  },
-  miniPreds: {
-    display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8, paddingTop: 8,
-    borderTop: "1px solid #1a1a1a",
-  },
-  miniPlayer: {
-    display: "flex", flexDirection: "column", alignItems: "center",
-    padding: "3px 8px", borderRadius: 6, gap: 1,
-  },
-  rankingCard: { padding: "8px 12px" },
-  rankingHeader: {
-    display: "flex", padding: "8px 12px", borderBottom: "1px solid #222",
-    marginBottom: 4,
-  },
-  rankingRow: {
-    display: "flex", alignItems: "center", padding: "12px",
-    borderRadius: 8, marginBottom: 4, transition: "all 0.2s",
-  },
-  compareCard: {
-    background: "#111", margin: "4px 8px", borderRadius: 10,
-    padding: "10px 12px", marginBottom: 4,
-  },
-  compareHeader: {
-    display: "flex", justifyContent: "space-between", marginBottom: 8,
-  },
-  compareRow: { display: "flex", flexWrap: "wrap", gap: 4 },
-  comparePlayer: {
-    display: "flex", flexDirection: "column", alignItems: "center",
-    padding: "4px 10px", borderRadius: 8, minWidth: 60,
-  },
-  card: {
-    background: "#111", borderRadius: 12, padding: 16, margin: 8,
-  },
-  tableRow: {
-    display: "flex", alignItems: "center", gap: 10, marginBottom: 8,
-  },
-  tablePos: { fontSize: 13, color: "#aaa", minWidth: 52 },
-  tableSelect: {
-    flex: 1, background: "#1a1a1a", border: "1px solid #333",
-    color: "#fff", padding: "7px 10px", borderRadius: 8, fontSize: 13,
-  },
-  tableChip: {
-    display: "flex", flexDirection: "column", alignItems: "center",
-    padding: "3px 8px", borderRadius: 6, minWidth: 52, gap: 1,
-  },
-  adminMatchRow: {
-    display: "flex", alignItems: "center", gap: 8,
-    padding: "8px 0", borderBottom: "1px solid #1a1a1a",
-  },
-  scoreInput: {
-    width: 40, textAlign: "center", background: "#1a1a1a",
-    border: "1px solid #333", color: "#fff", borderRadius: 6,
-    padding: "5px 4px", fontSize: 15, fontWeight: 700,
-  },
-  btnSave: {
-    background: "#22c55e", border: "none", borderRadius: 6,
-    color: "#fff", padding: "6px 10px", cursor: "pointer", fontWeight: 700,
-  },
-};
