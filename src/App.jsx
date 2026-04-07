@@ -272,11 +272,19 @@ function calcPts(pred, real) {
   if (ph===rh && pa===ra) return 25;
   const rw = rh>ra?"H":ra>rh?"A":"D", pw = ph>pa?"H":pa>ph?"A":"D";
   if (rw!==pw) return 0;
-  if (rw==="H"&&ph===rh) return 18;
-  if (rw==="A"&&pa===ra) return 18;
-  if (rh-ra===ph-pa) return 15;
-  if (rw==="H"&&pa===ra) return 12;
-  if (rw==="A"&&ph===rh) return 12;
+  // Empate: acertou resultado mas gols diferentes = 10pts
+  if (rw==="D") return 10;
+  // Vitória do mandante (H): vencedor é home
+  if (rw==="H") {
+    if (ph===rh) return 18;           // acertou gols do vencedor (home)
+    if (rh-ra===ph-pa) return 15;     // acertou saldo
+    if (pa===ra) return 12;           // acertou gols do perdedor (away)
+    return 10;
+  }
+  // Vitória do visitante (A): vencedor é away
+  if (pa===ra) return 18;             // acertou gols do vencedor (away)
+  if (rh-ra===ph-pa) return 15;       // acertou saldo
+  if (ph===rh) return 12;             // acertou gols do perdedor (home)
   return 10;
 }
 
