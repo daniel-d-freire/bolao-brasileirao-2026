@@ -277,7 +277,6 @@ function calcPts(pred, real) {
   if (rh-ra===ph-pa) return 15;
   if (rw==="H"&&pa===ra) return 12;
   if (rw==="A"&&ph===rh) return 12;
-  if (rw==="D") return 12;
   return 10;
 }
 
@@ -288,7 +287,7 @@ const SEED_PREDS = {
   luquinhas:{1:{home:1,away:0},2:{home:2,away:1},3:{home:0,away:2},4:{home:2,away:1},5:{home:3,away:0},6:{home:2,away:1},7:{home:0,away:1},8:{home:0,away:0},9:{home:0,away:1},10:{home:1,away:1},11:{home:2,away:0},12:{home:2,away:0},13:{home:0,away:2},14:{home:3,away:1},15:{home:1,away:1},16:{home:2,away:0},17:{home:1,away:2},18:{home:1,away:1},19:{home:1,away:0},20:{home:0,away:2},21:{home:1,away:2},22:{home:2,away:0},23:{home:1,away:1},24:{home:1,away:1},25:{home:1,away:0},26:{home:2,away:0},27:{home:0,away:1},28:{home:3,away:1},29:{home:0,away:1},30:{home:0,away:1},31:{home:2,away:1},32:{home:3,away:1},33:{home:2,away:0},34:{home:3,away:1},35:{home:0,away:1},36:{home:1,away:1},37:{home:2,away:1},38:{home:2,away:1}},
   lazaro:{1:{home:2,away:0},2:{home:1,away:2},3:{home:1,away:2},4:{home:2,away:0},5:{home:1,away:2},6:{home:1,away:2},7:{home:1,away:1},8:{home:2,away:1},9:{home:2,away:0},10:{home:1,away:2},11:{home:2,away:0},12:{home:3,away:0},13:{home:3,away:0},14:{home:3,away:0},15:{home:2,away:1},16:{home:3,away:0},17:{home:2,away:1},18:{home:2,away:0},19:{home:2,away:1},20:{home:0,away:1},21:{home:1,away:0},22:{home:1,away:2},23:{home:1,away:0},24:{home:2,away:0},25:{home:1,away:0},26:{home:3,away:1},27:{home:1,away:2},28:{home:2,away:0},29:{home:1,away:3},30:{home:2,away:0},31:{home:2,away:0},32:{home:2,away:1},33:{home:2,away:1},34:{home:2,away:1},35:{home:2,away:1},36:{home:1,away:2},37:{home:2,away:0},38:{home:2,away:1}},
   vini:{1:{home:2,away:2},2:{home:2,away:1},3:{home:0,away:3},4:{home:0,away:0},5:{home:0,away:1},6:{home:1,away:1},7:{home:2,away:0},8:{home:1,away:1},9:{home:0,away:0},10:{home:0,away:1},11:{home:2,away:0},12:{home:3,away:1},13:{home:2,away:1},14:{home:3,away:0},15:{home:1,away:1},16:{home:2,away:1},17:{home:2,away:1},18:{home:1,away:0},19:{home:2,away:2},20:{home:1,away:1},21:{home:2,away:1},22:{home:1,away:0},23:{home:2,away:2},24:{home:2,away:1},25:{home:1,away:1},26:{home:2,away:0},27:{home:0,away:0},28:{home:1,away:1},29:{home:0,away:2},30:{home:0,away:1},31:{home:2,away:0},32:{home:3,away:0},33:{home:2,away:0},34:{home:3,away:1},35:{home:2,away:2},36:{home:2,away:2},37:{home:2,away:1},38:{home:1,away:1}},
-  dane:{1:{home:1,away:0},2:{home:1,away:2},3:{home:1,away:2},4:{home:1,away:0},5:{home:2,away:1},6:{home:1,away:1},7:{home:1,away:0},8:{home:2,away:1},9:{home:1,away:0},10:{home:1,away:1},11:{home:2,away:0},12:{home:1,away:0},13:{home:1,away:1},14:{home:2,away:0},15:{home:2,away:1},16:{home:2,away:0},17:{home:1,away:1},18:{home:1,away:0},19:{home:2,away:1},20:{home:0,away:1},21:{home:1,away:1},22:{home:0,away:1},23:{home:2,away:1},24:{home:1,away:0},25:{home:1,away:1},26:{home:2,away:0},27:{home:0,away:1},28:{home:1,away:0},29:{home:1,away:2},30:{home:0,away:0},31:{home:2,away:0},32:{home:2,away:0},33:{home:1,away:0},34:{home:2,away:1},35:{home:1,away:0},36:{home:1,away:0},37:{home:1,away:1},38:{home:1,away:2}},
+  dane:{1:{home:1,away:0},2:{home:1,away:2},3:{home:1,away:2},4:{home:1,away:0},5:{home:2,away:1},6:{home:1,away:1},7:{home:1,away:0},8:{home:2,away:1},9:{home:1,away:0},10:{home:1,away:1},11:{home:2,away:0},12:{home:1,away:0},13:{home:1,away:1},14:{home:2,away:0},15:{home:2,away:1},16:{home:2,away:0},17:{home:1,away:1},18:{home:1,away:0},19:{home:2,away:1},20:{home:0,away:1},21:{home:1,away:1},22:{home:0,away:1},23:{home:2,away:1},24:{home:1,away:0},25:{home:1,away:1},26:{home:2,away:0},27:{home:0,away:1},28:{home:1,away:0},29:{home:1,away:2},30:{home:0,away:0},31:{home:2,away:0},32:{home:2,away:0},33:{home:1,away:0},34:{home:2,away:1},35:{home:1,away:0},36:{home:1,away:0},37:{home:1,away:1},38:{home:2,away:0},39:{home:2,away:0},40:{home:1,away:0}},
   alex:{1:{home:2,away:0},2:{home:0,away:1},3:{home:0,away:2},4:{home:2,away:0},5:{home:1,away:0},6:{home:1,away:1},7:{home:1,away:0},8:{home:1,away:1},9:{home:1,away:0},10:{home:0,away:1},11:{home:3,away:0},12:{home:1,away:0},13:{home:1,away:0},14:{home:2,away:1},15:{home:1,away:1},16:{home:3,away:0},17:{home:1,away:0},18:{home:0,away:0},19:{home:0,away:1},20:{home:0,away:2},21:{home:2,away:0},22:{home:2,away:1},23:{home:1,away:0},24:{home:1,away:2},25:{home:1,away:1},26:{home:3,away:1},27:{home:1,away:1},28:{home:0,away:1},29:{home:0,away:3},30:{home:1,away:2},31:{home:1,away:0},32:{home:1,away:0},33:{home:1,away:1},34:{home:1,away:1},35:{home:2,away:0},36:{home:2,away:1},37:{home:0,away:1},38:{home:1,away:2}},
 };
 
@@ -354,13 +353,14 @@ export default function App() {
     setSent(false);
   }, [player?.id]);
 
-  // Auto-navegar para rodada atual
+  // Auto-navegar para próxima rodada a realizar
   useEffect(() => {
     if (tab !== "jogos" || !player || isAdmin) return;
-    const firstOpen = ROUNDS.find(r =>
-      matchesByRound[r].some(m => !results[m.id]?.home && results[m.id]?.home !== 0)
+    // Próxima rodada = primeira que ainda não tem todos os resultados
+    const firstIncomplete = ROUNDS.find(r =>
+      !matchesByRound[r].every(m => results[m.id]?.home != null && results[m.id]?.home !== "")
     );
-    const target = firstOpen ?? 38;
+    const target = firstIncomplete ?? 38;
     setActiveRound(target);
     setTimeout(() => {
       const el = stripRef.current?.querySelector(`[data-round="${target}"]`);
