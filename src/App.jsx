@@ -339,42 +339,30 @@ export default function App() {
 
   // Seed palpites se vazio
   useEffect(() => {
-    const hasPreds = Object.keys(savedPreds).some(pid => Object.keys(savedPreds[pid]||{}).length > 0);
-    if (!hasPreds) return;
-    // preds já existem, não seed
-  }, [savedPreds]);
-
-  useEffect(() => {
     if (!player || isAdmin) return;
-    const hasSaved = Object.keys(savedPreds[player.id] || {}).length > 0;
-    if (hasSaved) {
-      // Usa palpites já salvos no Firebase
-      setDraftPreds(savedPreds[player.id]);
-    } else {
-      // Primeira vez: carrega seed da planilha E salva no Firebase automaticamente
-      const seed = SEED_PREDS[player.id] || {};
-      setDraftPreds(seed);
-      if (Object.keys(seed).length > 0) {
-        set(DB.preds(player.id), seed).catch(() => {});
-      }
-    }
+    // Sempre usar o que está no Firebase; nunca sobrescrever automaticamente
+    const saved = savedPreds[player.id] || {};
+    setDraftPreds(Object.keys(saved).length > 0 ? saved : (SEED_PREDS[player.id] || {}));
     setSent(false);
-  }, [player?.id]);
+  }, [player?.id, savedPreds[player?.id]]);
 
-  // Auto-navegar para próxima rodada a realizar
+  // Auto-navegar para a próxima rodada a realizar, baseado na data de hoje
   useEffect(() => {
     if (tab !== "jogos" || !player || isAdmin) return;
-    // Próxima rodada = primeira que ainda não tem todos os resultados
-    const firstIncomplete = ROUNDS.find(r =>
-      !matchesByRound[r].every(m => results[m.id]?.home != null && results[m.id]?.home !== "")
-    );
-    const target = firstIncomplete ?? 38;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Próxima rodada = primeira rodada cujo primeiro jogo tem data >= hoje
+    const nextRound = ROUNDS.find(r => {
+      const firstDate = new Date(matchesByRound[r][0].date + "T12:00:00");
+      return firstDate >= today;
+    });
+    const target = nextRound ?? 38;
     setActiveRound(target);
     setTimeout(() => {
       const el = stripRef.current?.querySelector(`[data-round="${target}"]`);
       el?.scrollIntoView({ inline:"center", behavior:"smooth" });
     }, 200);
-  }, [tab, player?.id, results]);
+  }, [tab, player?.id]);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   function handleLogin() {
