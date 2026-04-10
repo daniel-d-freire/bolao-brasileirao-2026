@@ -34,6 +34,7 @@ const DB = {
   payments: ()    => ref(db, `payments`),
   champion: ()    => ref(db, `champion`),
   tableGuesses: (pid) => ref(db, `tableGuesses/${pid}`),
+  finalTable: () => ref(db, `finalTable`),
 };
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -317,6 +318,7 @@ export default function App() {
   const [payments, setPayments]       = useState({});
   const [champion, setChampion]       = useState("");
   const [tableGuesses, setTableGuesses] = useState({});
+  const [finalTable, setFinalTable]   = useState({});
 
   const [draftPreds, setDraftPreds] = useState({});
   const [saving, setSaving] = useState(false);
@@ -327,6 +329,7 @@ export default function App() {
     onValue(DB.results(), snap => setResults(snap.exists() ? snap.val() : {}));
     onValue(DB.payments(), snap => setPayments(snap.exists() ? snap.val() : {}));
     onValue(DB.champion(), snap => setChampion(snap.exists() ? snap.val() : ""));
+    onValue(DB.finalTable(), snap => setFinalTable(snap.exists() ? snap.val() : {}));
     ALL_IDS.forEach(pid => {
       onValue(DB.preds(pid), snap => {
         setSavedPreds(prev => ({ ...prev, [pid]: snap.exists() ? snap.val() : {} }));
@@ -428,6 +431,12 @@ export default function App() {
     await set(DB.champion(), team);
   }
 
+  async function setFinalTablePos(pos, team) {
+    const updated = { ...finalTable, [pos]: team };
+    setFinalTable(updated);
+    await set(DB.finalTable(), updated);
+  }
+
   // ── Ranking ───────────────────────────────────────────────────────────────
   const ranking = PLAYERS.map(p => {
     const preds = savedPreds[p.id] || {};
@@ -442,7 +451,12 @@ export default function App() {
     });
     // Campeão
     const tg = tableGuesses[p.id] || {};
+    // Campeão: 100pts se acertou o 1º lugar
     if (champion && tg[1]===champion) pts += 100;
+    // Classificação real: 10pts por posição acertada
+    Object.entries(tg).forEach(([pos, team]) => {
+      if (finalTable[+pos] && finalTable[+pos]===team) pts += 10;
+    });
     return { ...p, pts, exact, correct, total };
   }).sort((a,b) => b.pts-a.pts || b.exact-a.exact);
 
@@ -712,93 +726,63 @@ export default function App() {
       {tab==="tabela" && (
         <div style={{ padding:"12px 8px" }}>
           <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.gold, marginBottom:6, letterSpacing:1 }}>📋 TABELA FINAL</div>
-          <div style={{ fontSize:12, color:G.muted, marginBottom:14 }}>Palpite a classificação completa · <strong style={{color:G.gold}}>10 pts</strong> por posição acertada · <strong style={{color:G.gold}}>100 pts</strong> pelo campeão</div>
+          <div style={{ fontSize:12, color:G.muted, marginBottom:14 }}>
+            <strong style={{color:G.gold}}>10 pts</strong> por posição acertada · <strong style={{color:G.gold}}>100 pts</strong> pelo campeão · Palpites encerrados
+          </div>
 
-          {!isAdmin ? (
-            <div>
-              <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:16, marginBottom:14 }}>
-                <div style={{ fontSize:12, fontWeight:800, color:G.accent, marginBottom:12 }}>SEU PALPITE</div>
-                {TEAMS.map((_,i) => {
-                  const pos = i+1;
-                  const zone = pos<=4?"G4":pos<=6?"Libertadores":pos<=12?"Sul-Americana":pos>=17?"Rebaixamento":"";
-                  const zoneColor = pos<=4?G.success:pos<=6?"#22d3ee":pos<=12?G.muted:pos>=17?G.danger:G.muted;
-                  const zoneIcon = pos<=4?"🟢":pos<=6?"🔵":pos>=17?"🔴":"⚪";
-                  const saved = tableGuesses[player?.id]?.[pos];
-                  return (
-                    <div key={pos} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7 }}>
-                      <div style={{ minWidth:52, fontSize:12, fontWeight:800, color:zoneColor, background:zoneColor+"15", borderRadius:6, padding:"3px 7px", textAlign:"center", flexShrink:0 }}>
-                        {zoneIcon} {pos}º
-                      </div>
-                      <select
-                        value={tableGuesses[player?.id]?.[pos] || ""}
-                        onChange={async e => {
-                          const v = e.target.value;
-                          const updated = { ...(tableGuesses[player?.id]||{}), [pos]: v };
-                          setTableGuesses(prev => ({ ...prev, [player.id]: updated }));
-                          await set(DB.tableGuesses(player.id), updated);
-                        }}
-                        style={{ flex:1, padding:"7px 10px", background:saved?G.card2+"cc":G.card2, border:`1px solid ${saved?G.accent+"55":G.border}`, color:saved?G.text:G.muted, borderRadius:8, fontSize:13, cursor:"pointer", outline:"none" }}>
-                        <option value="">-- Escolha o time --</option>
-                        {TEAMS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                  );
-                })}
-                <div style={{ marginTop:14, fontSize:11, color:G.muted }}>✅ Salvamento automático ao selecionar cada posição</div>
-              </div>
-            </div>
-          ) : (
-            /* Admin: ver palpites de todos */
-            <div>
-              <div style={{ background:G.card, border:`1px solid ${G.gold}33`, borderRadius:14, padding:16, marginBottom:14 }}>
-                <div style={{ fontSize:12, fontWeight:800, color:G.gold, marginBottom:14 }}>PALPITES DE TODOS OS JOGADORES</div>
-                <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:8, borderBottom:`1px solid ${G.border}`, marginBottom:12 }}>
-                  <div style={{ minWidth:44, fontSize:11, fontWeight:800, color:G.muted }}>Pos</div>
-                  {PLAYERS.map(p => (
-                    <div key={p.id} style={{ minWidth:72, fontSize:11, fontWeight:800, color:G.muted, textAlign:"center" }}>{p.name}</div>
-                  ))}
-                </div>
-                {TEAMS.map((_,i) => {
-                  const pos = i+1;
-                  const zoneColor = pos<=4?G.success:pos>=17?G.danger:G.muted;
-                  return (
-                    <div key={pos} style={{ display:"flex", gap:6, alignItems:"center", padding:"4px 0", borderBottom:`1px solid ${G.border}22` }}>
-                      <div style={{ minWidth:44, fontSize:11, fontWeight:800, color:zoneColor }}>{pos}º</div>
-                      {PLAYERS.map(p => {
-                        const guess = tableGuesses[p.id]?.[pos];
-                        return (
-                          <div key={p.id} style={{ minWidth:72, fontSize:11, textAlign:"center", color:guess?G.text:G.muted, background:guess?G.card2:"transparent", borderRadius:5, padding:"2px 4px" }}>
-                            {guess || "—"}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Scores de tabela (quando campeão definido) */}
-          {champion && (
-            <div style={{ background:G.card, border:`1px solid ${G.gold}44`, borderRadius:14, padding:16 }}>
-              <div style={{ fontSize:12, fontWeight:800, color:G.gold, marginBottom:12 }}>🏆 PALPITES DE CAMPEÃO</div>
-              {PLAYERS.map(p => {
-                const guess = tableGuesses[p.id]?.[1];
-                const hit = guess===champion;
-                return (
-                  <div key={p.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:`1px solid ${G.border}22` }}>
-                    <span style={{ fontSize:13, fontWeight:700, color:p.id===player?.id?G.accent:G.text }}>{p.name}</span>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ fontSize:12, color:hit?G.gold:G.muted }}>{guess||"—"}</span>
-                      {hit && <span style={{ fontSize:12, fontWeight:800, color:G.gold }}>+100pts 🏆</span>}
-                    </div>
+          {/* Seu palpite — somente visualização */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:16, marginBottom:14 }}>
+            <div style={{ fontSize:12, fontWeight:800, color:G.accent, marginBottom:12 }}>SEU PALPITE</div>
+            {TEAMS.map((_,i) => {
+              const pos = i+1;
+              const zoneColor = pos<=4?G.success:pos<=6?"#22d3ee":pos<=12?G.muted:pos>=17?G.danger:G.muted;
+              const zoneIcon = pos<=4?"🟢":pos<=6?"🔵":pos>=17?"🔴":"⚪";
+              const guess = tableGuesses[player?.id]?.[pos];
+              const real = finalTable[pos];
+              const hit = real && guess && real===guess;
+              return (
+                <div key={pos} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, padding:"3px 0", borderBottom:`1px solid ${G.border}22` }}>
+                  <div style={{ minWidth:48, fontSize:12, fontWeight:800, color:zoneColor, background:zoneColor+"15", borderRadius:6, padding:"2px 6px", textAlign:"center", flexShrink:0 }}>
+                    {zoneIcon} {pos}º
                   </div>
-                );
+                  <div style={{ flex:1, fontSize:13, fontWeight:700, color:hit?G.success:guess?G.text:G.muted }}>
+                    {guess || "—"}
+                    {hit && <span style={{ fontSize:11, color:G.success, marginLeft:6 }}>✅ +10pts</span>}
+                    {real && !hit && guess && <span style={{ fontSize:11, color:G.danger, marginLeft:6 }}>❌ ({real})</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Comparativo todos os jogadores */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:16, overflowX:"auto" }}>
+            <div style={{ fontSize:12, fontWeight:800, color:G.muted, marginBottom:12 }}>👁 TODOS OS PALPITES</div>
+            <div style={{ display:"grid", gridTemplateColumns:`44px repeat(${PLAYERS.length}, 1fr)`, gap:2, minWidth:400 }}>
+              <div style={{ fontSize:10, fontWeight:800, color:G.muted }}>Pos</div>
+              {PLAYERS.map(p => (
+                <div key={p.id} style={{ fontSize:10, fontWeight:800, color:p.id===player?.id?G.accent:G.muted, textAlign:"center" }}>{p.name}</div>
+              ))}
+              {TEAMS.map((_,i) => {
+                const pos = i+1;
+                const zoneColor = pos<=4?G.success:pos>=17?G.danger:G.muted;
+                const real = finalTable[pos];
+                return [
+                  <div key={`pos${pos}`} style={{ fontSize:11, fontWeight:800, color:zoneColor, paddingTop:3 }}>{pos}º</div>,
+                  ...PLAYERS.map(p => {
+                    const guess = tableGuesses[p.id]?.[pos];
+                    const hit = real && guess && real===guess;
+                    const isMe = p.id===player?.id;
+                    return (
+                      <div key={p.id} style={{ fontSize:11, textAlign:"center", background:hit?"#14532d":isMe?G.card2+"88":"transparent", color:hit?G.success:guess?G.text:G.muted, borderRadius:4, padding:"2px 2px" }}>
+                        {guess || "—"}
+                      </div>
+                    );
+                  })
+                ];
               })}
-              <div style={{ marginTop:10, fontSize:12, color:G.muted }}>Campeão definido: <strong style={{color:G.gold}}>{champion}</strong></div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -1022,6 +1006,54 @@ export default function App() {
               {TEAMS.map(t=><option key={t} value={t}>{t}</option>)}
             </select>
             {champion && <div style={{ color:G.gold, fontWeight:800, marginTop:10 }}>🏆 {champion}</div>}
+          </div>
+
+          {/* Classificação Real Final */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:6 }}>📊 CLASSIFICAÇÃO REAL FINAL</div>
+            <div style={{ fontSize:11, color:G.muted, marginBottom:14 }}>Defina ao final do campeonato. 10pts por posição acertada por jogador.</div>
+            {TEAMS.map((_,i) => {
+              const pos = i+1;
+              const zoneColor = pos<=4?G.success:pos<=6?"#22d3ee":pos>=17?G.danger:G.muted;
+              const zoneIcon = pos<=4?"🟢":pos<=6?"🔵":pos>=17?"🔴":"⚪";
+              return (
+                <div key={pos} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                  <div style={{ minWidth:48, fontSize:12, fontWeight:800, color:zoneColor, background:zoneColor+"15", borderRadius:6, padding:"2px 6px", textAlign:"center", flexShrink:0 }}>
+                    {zoneIcon} {pos}º
+                  </div>
+                  <select value={finalTable[pos]||""} onChange={e=>setFinalTablePos(pos,e.target.value)}
+                    style={{ flex:1, padding:"6px 10px", background:finalTable[pos]?G.card2:G.bg, border:`1px solid ${finalTable[pos]?G.accent+"55":G.border}`, color:finalTable[pos]?G.text:G.muted, borderRadius:8, fontSize:12, cursor:"pointer", outline:"none" }}>
+                    <option value="">-- não definido --</option>
+                    {TEAMS.map(t=><option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              );
+            })}
+            <div style={{ marginTop:12, fontSize:11, color:G.muted }}>
+              Preenchido: {Object.keys(finalTable).length}/20 posições
+            </div>
+          </div>
+
+          {/* Palpites Tabela — visão admin */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14, overflowX:"auto" }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>📋 PALPITES DE TABELA</div>
+            <div style={{ display:"grid", gridTemplateColumns:"44px repeat(7, 1fr)", gap:2, minWidth:500, fontSize:10 }}>
+              <div style={{ fontWeight:800, color:G.muted }}>Pos</div>
+              {PLAYERS.map(p=><div key={p.id} style={{ fontWeight:800, color:G.muted, textAlign:"center" }}>{p.name}</div>)}
+              {TEAMS.map((_,i) => {
+                const pos=i+1;
+                const zoneColor=pos<=4?G.success:pos>=17?G.danger:G.muted;
+                const real=finalTable[pos];
+                return [
+                  <div key={`p${pos}`} style={{ fontWeight:800, color:zoneColor, paddingTop:3 }}>{pos}º</div>,
+                  ...PLAYERS.map(p=>{
+                    const g=tableGuesses[p.id]?.[pos];
+                    const hit=real&&g&&real===g;
+                    return <div key={p.id} style={{ textAlign:"center", background:hit?"#14532d":"transparent", color:hit?G.success:g?G.text:G.muted, borderRadius:3, padding:"2px 1px" }}>{g||"—"}</div>;
+                  })
+                ];
+              })}
+            </div>
           </div>
 
           {/* Pagamentos */}
