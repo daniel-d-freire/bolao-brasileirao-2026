@@ -334,16 +334,37 @@ export default function App() {
 
   // ── Firebase listeners ────────────────────────────────────────────────────
   useEffect(() => {
-    onValue(DB.results(), snap => setResults(snap.exists() ? snap.val() : {}));
+    onValue(DB.results(), snap => {
+      if (!snap.exists()) { setResults({}); return; }
+      const raw = snap.val();
+      const normalized = {};
+      Object.entries(raw).forEach(([k, v]) => { normalized[+k] = v; });
+      setResults(normalized);
+    });
     onValue(DB.payments(), snap => setPayments(snap.exists() ? snap.val() : {}));
     onValue(DB.champion(), snap => setChampion(snap.exists() ? snap.val() : ""));
-    onValue(DB.finalTable(), snap => setFinalTable(snap.exists() ? snap.val() : {}));
+    onValue(DB.finalTable(), snap => {
+      if (!snap.exists()) { setFinalTable({}); return; }
+      const raw = snap.val();
+      const normalized = {};
+      Object.entries(raw).forEach(([k, v]) => { normalized[+k] = v; });
+      setFinalTable(normalized);
+    });
     ALL_IDS.forEach(pid => {
       onValue(DB.preds(pid), snap => {
-        setSavedPreds(prev => ({ ...prev, [pid]: snap.exists() ? snap.val() : {} }));
+        if (!snap.exists()) { setSavedPreds(prev => ({ ...prev, [pid]: {} })); return; }
+        // Normalizar chaves para número (Firebase retorna strings)
+        const raw = snap.val();
+        const normalized = {};
+        Object.entries(raw).forEach(([k, v]) => { normalized[+k] = v; });
+        setSavedPreds(prev => ({ ...prev, [pid]: normalized }));
       });
       onValue(DB.tableGuesses(pid), snap => {
-        setTableGuesses(prev => ({ ...prev, [pid]: snap.exists() ? snap.val() : {} }));
+        if (!snap.exists()) { setTableGuesses(prev => ({ ...prev, [pid]: {} })); return; }
+        const raw = snap.val();
+        const normalized = {};
+        Object.entries(raw).forEach(([k, v]) => { normalized[+k] = v; });
+        setTableGuesses(prev => ({ ...prev, [pid]: normalized }));
       });
     });
   }, []);
