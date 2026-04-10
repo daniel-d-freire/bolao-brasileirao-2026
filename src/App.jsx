@@ -1007,6 +1007,47 @@ export default function App() {
         <div style={{ padding:"12px 8px" }}>
           <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent2, marginBottom:14 }}>⚙️ PAINEL DO ADMIN</div>
 
+          {/* ── ALERTAS: jogos em menos de 2h sem palpite ── */}
+          {(() => {
+            const now = new Date();
+            const alerts = [];
+            MATCHES.forEach(m => {
+              const [h, min] = (m.time||"16:00").split(":").map(Number);
+              const [y, mo, d] = m.date.split("-").map(Number);
+              const kickoff = new Date(y, mo-1, d, h, min, 0);
+              const minsLeft = (kickoff - now) / 60000;
+              if (minsLeft < 0 || minsLeft > 120) return; // só jogos nas próximas 2h
+              PLAYERS.forEach(p => {
+                const pred = savedPreds[p.id]?.[m.id];
+                if (!pred || pred.home==null || pred.home==="") {
+                  alerts.push({ player: p.name, match: `${m.home} × ${m.away}`, time: m.time, date: m.date, minsLeft: Math.round(minsLeft) });
+                }
+              });
+            });
+            if (alerts.length === 0) return (
+              <div style={{ background:"#14532d22", border:`1px solid ${G.success}44`, borderRadius:12, padding:"12px 16px", marginBottom:14, display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:18 }}>✅</span>
+                <span style={{ fontSize:13, color:G.success, fontWeight:700 }}>Todos os jogadores palpitaram nos jogos das próximas 2 horas</span>
+              </div>
+            );
+            return (
+              <div style={{ background:"#7f1d1d22", border:`1px solid ${G.danger}55`, borderRadius:12, padding:"14px 16px", marginBottom:14 }}>
+                <div style={{ fontWeight:900, fontSize:13, color:G.danger, marginBottom:10 }}>⚠️ PALPITES FALTANDO — MENOS DE 2H</div>
+                {alerts.map((a, i) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 0", borderBottom:`1px solid ${G.danger}22` }}>
+                    <div>
+                      <span style={{ fontWeight:800, color:G.text, fontSize:13 }}>{a.player}</span>
+                      <span style={{ color:G.muted, fontSize:12, marginLeft:8 }}>{a.match}</span>
+                    </div>
+                    <span style={{ fontSize:12, fontWeight:800, color:a.minsLeft<=30?G.danger:G.warn, background:(a.minsLeft<=30?G.danger:G.warn)+"22", padding:"2px 8px", borderRadius:20 }}>
+                      {a.minsLeft}min
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
           {/* Campeão */}
           <div style={{ background:G.card, border:`1px solid ${G.gold}44`, borderRadius:14, padding:18, marginBottom:14 }}>
             <div style={{ fontWeight:900, fontSize:14, color:G.gold, marginBottom:12 }}>🏆 CAMPEÃO DO BRASILEIRÃO</div>
