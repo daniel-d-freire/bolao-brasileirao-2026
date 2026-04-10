@@ -935,12 +935,11 @@ export default function App() {
           <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:12 }}>
             <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>📋 REGRAS</div>
             {[
-              "Salve seus palpites clicando em SALVAR PALPITES a cada rodada",
-              "O prazo encerra 5 minutos antes do início do primeiro jogo da rodada",
-              "Os palpites ficam visíveis a todos após o admin inserir os resultados",
-              "Pontuações são atualizadas em tempo real",
-              "Jogadores: TICO, PEDRO IVO, LUQUINHAS, LAZARO, VINI, DANE, ALEX",
+              "Palpite cada jogo individualmente e clique em SALVAR PALPITES para registrar os palpites da rodada",
+              "O prazo para palpitar cada jogo encerra 5 minutos antes do horário de início daquela partida",
+              "Os palpites de cada jogo ficam visíveis a todos após o encerramento do prazo (5 min antes do início)",
               "Pausa durante a Copa do Mundo (junho–julho de 2026)",
+              "Jogadores: TICO, PEDRO IVO, LUQUINHAS, LAZARO, VINI, DANE, ALEX",
             ].map(item => (
               <div key={item} style={{ display:"flex", gap:8, padding:"7px 0", borderBottom:`1px solid ${G.border}33`, fontSize:13 }}>
                 <span style={{ color:G.accent, flexShrink:0 }}>▸</span>
