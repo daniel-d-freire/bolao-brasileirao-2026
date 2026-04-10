@@ -116,41 +116,41 @@ const RAW = [
   [10,"Mirassol","Red Bull Bragantino","2026-04-05"],[10,"Atlético-MG","Athletico-PR","2026-04-05"],
   [10,"Grêmio","Remo","2026-04-05"],[10,"Coritiba","Fluminense","2026-04-06"],
   [10,"Bahia","Palmeiras","2026-04-05"],[10,"Chapecoense","Vitória","2026-04-05"],
-  [11,"Fluminense","Flamengo","2026-04-11"],[11,"Botafogo","Coritiba","2026-04-12"],
-  [11,"Santos","Atlético-MG","2026-04-11"],[11,"Corinthians","Palmeiras","2026-04-12"],
-  [11,"Mirassol","Bahia","2026-04-11"],[11,"Cruzeiro","Red Bull Bragantino","2026-04-12"],
-  [11,"Internacional","Grêmio","2026-04-12"],[11,"Athletico-PR","Chapecoense","2026-04-11"],
-  [11,"Vitória","São Paulo","2026-04-11"],[11,"Remo","Vasco","2026-04-12"],
-  [12,"Flamengo","Bahia","2026-04-18"],[12,"Vasco","São Paulo","2026-04-19"],
-  [12,"Santos","Fluminense","2026-04-18"],[12,"Palmeiras","Athletico-PR","2026-04-19"],
-  [12,"Red Bull Bragantino","Remo","2026-04-18"],[12,"Cruzeiro","Grêmio","2026-04-18"],
-  [12,"Internacional","Mirassol","2026-04-19"],[12,"Coritiba","Atlético-MG","2026-04-19"],
-  [12,"Vitória","Corinthians","2026-04-18"],[12,"Chapecoense","Botafogo","2026-04-20"],
-  [13,"Fluminense","Chapecoense","2026-04-25"],[13,"Botafogo","Internacional","2026-04-26"],
-  [13,"São Paulo","Mirassol","2026-04-25"],[13,"Corinthians","Vasco","2026-04-25"],
-  [13,"Red Bull Bragantino","Palmeiras","2026-04-25"],[13,"Atlético-MG","Flamengo","2026-04-26"],
-  [13,"Grêmio","Coritiba","2026-04-26"],[13,"Athletico-PR","Vitória","2026-04-25"],
-  [13,"Bahia","Santos","2026-04-26"],[13,"Remo","Cruzeiro","2026-04-25"],
-  [14,"Flamengo","Vasco","2026-05-02"],[14,"Botafogo","Remo","2026-05-03"],
-  [14,"São Paulo","Bahia","2026-05-02"],[14,"Palmeiras","Santos","2026-05-02"],
-  [14,"Mirassol","Corinthians","2026-05-03"],[14,"Cruzeiro","Atlético-MG","2026-05-02"],
-  [14,"Internacional","Fluminense","2026-05-03"],[14,"Athletico-PR","Grêmio","2026-05-02"],
-  [14,"Vitória","Coritiba","2026-05-03"],[14,"Chapecoense","Red Bull Bragantino","2026-05-03"],
-  [15,"Fluminense","Vitória","2026-05-09"],[15,"Vasco","Athletico-PR","2026-05-10"],
-  [15,"Santos","Red Bull Bragantino","2026-05-09"],[15,"Corinthians","São Paulo","2026-05-09"],
-  [15,"Mirassol","Chapecoense","2026-05-09"],[15,"Atlético-MG","Botafogo","2026-05-10"],
-  [15,"Grêmio","Flamengo","2026-05-10"],[15,"Coritiba","Internacional","2026-05-09"],
-  [15,"Bahia","Cruzeiro","2026-05-10"],[15,"Remo","Palmeiras","2026-05-11"],
-  [16,"Fluminense","São Paulo","2026-05-16"],[16,"Botafogo","Corinthians","2026-05-17"],
-  [16,"Santos","Coritiba","2026-05-16"],[16,"Palmeiras","Cruzeiro","2026-05-16"],
-  [16,"Red Bull Bragantino","Vitória","2026-05-17"],[16,"Atlético-MG","Mirassol","2026-05-16"],
-  [16,"Internacional","Vasco","2026-05-17"],[16,"Athletico-PR","Flamengo","2026-05-17"],
-  [16,"Bahia","Grêmio","2026-05-16"],[16,"Chapecoense","Remo","2026-05-18"],
-  [17,"Flamengo","Palmeiras","2026-05-23"],[17,"Vasco","Red Bull Bragantino","2026-05-24"],
-  [17,"São Paulo","Botafogo","2026-05-23"],[17,"Corinthians","Atlético-MG","2026-05-24"],
-  [17,"Mirassol","Fluminense","2026-05-23"],[17,"Cruzeiro","Chapecoense","2026-05-23"],
-  [17,"Grêmio","Santos","2026-05-24"],[17,"Coritiba","Bahia","2026-05-24"],
-  [17,"Vitória","Internacional","2026-05-23"],[17,"Remo","Athletico-PR","2026-05-25"],
+  [11,"Fluminense","Flamengo","2026-04-11","18:30"],[11,"Botafogo","Coritiba","2026-04-12","16:00"],
+  [11,"Santos","Atlético-MG","2026-04-11","20:00"],[11,"Corinthians","Palmeiras","2026-04-12","18:30"],
+  [11,"Mirassol","Bahia","2026-04-11","18:30"],[11,"Cruzeiro","Red Bull Bragantino","2026-04-12","18:30"],
+  [11,"Internacional","Grêmio","2026-04-11","20:30"],[11,"Athletico-PR","Chapecoense","2026-04-12","11:00"],
+  [11,"Vitória","São Paulo","2026-04-11","16:30"],[11,"Remo","Vasco","2026-04-11","16:30"],
+  [12,"Flamengo","Bahia","2026-04-19","19:30"],[12,"Vasco","São Paulo","2026-04-18","18:30"],
+  [12,"Santos","Fluminense","2026-04-19","16:00"],[12,"Palmeiras","Athletico-PR","2026-04-19","18:30"],
+  [12,"Red Bull Bragantino","Remo","2026-04-19","18:30"],[12,"Cruzeiro","Grêmio","2026-04-18","20:30"],
+  [12,"Internacional","Mirassol","2026-04-19","11:00"],[12,"Coritiba","Atlético-MG","2026-04-19","16:00"],
+  [12,"Vitória","Corinthians","2026-04-18","20:00"],[12,"Chapecoense","Botafogo","2026-04-18","18:30"],
+  [13,"Fluminense","Chapecoense","2026-04-26","20:30"],[13,"Botafogo","Internacional","2026-04-25","18:30"],
+  [13,"São Paulo","Mirassol","2026-04-25","21:00"],[13,"Corinthians","Vasco","2026-04-26","16:00"],
+  [13,"Red Bull Bragantino","Palmeiras","2026-04-26","18:30"],[13,"Atlético-MG","Flamengo","2026-04-26","20:30"],
+  [13,"Grêmio","Coritiba","2026-04-26","16:00"],[13,"Athletico-PR","Vitória","2026-04-26","18:30"],
+  [13,"Bahia","Santos","2026-04-25","18:30"],[13,"Remo","Cruzeiro","2026-04-25","18:30"],
+  [14,"Flamengo","Vasco","2026-05-03","16:00"],[14,"Botafogo","Remo","2026-05-02","16:00"],
+  [14,"São Paulo","Bahia","2026-05-03","16:00"],[14,"Palmeiras","Santos","2026-05-02","18:30"],
+  [14,"Mirassol","Corinthians","2026-05-03","20:30"],[14,"Cruzeiro","Atlético-MG","2026-05-02","21:00"],
+  [14,"Internacional","Fluminense","2026-05-03","18:30"],[14,"Athletico-PR","Grêmio","2026-05-02","20:30"],
+  [14,"Vitória","Coritiba","2026-05-02","16:00"],[14,"Chapecoense","Red Bull Bragantino","2026-05-03","18:30"],
+  [15,"Fluminense","Vitória","2026-05-09","18:00"],[15,"Vasco","Athletico-PR","2026-05-10","20:30"],
+  [15,"Santos","Red Bull Bragantino","2026-05-10","18:30"],[15,"Corinthians","São Paulo","2026-05-10","18:30"],
+  [15,"Mirassol","Chapecoense","2026-05-10","18:30"],[15,"Atlético-MG","Botafogo","2026-05-10","16:00"],
+  [15,"Grêmio","Flamengo","2026-05-10","19:30"],[15,"Coritiba","Internacional","2026-05-09","16:00"],
+  [15,"Bahia","Cruzeiro","2026-05-09","21:00"],[15,"Remo","Palmeiras","2026-05-10","16:00"],
+  [16,"Fluminense","São Paulo","2026-05-16","20:30"],[16,"Botafogo","Corinthians","2026-05-17","16:00"],
+  [16,"Santos","Coritiba","2026-05-17","11:00"],[16,"Palmeiras","Cruzeiro","2026-05-16","21:00"],
+  [16,"Red Bull Bragantino","Vitória","2026-05-17","18:30"],[16,"Atlético-MG","Mirassol","2026-05-16","18:30"],
+  [16,"Internacional","Vasco","2026-05-16","18:30"],[16,"Athletico-PR","Flamengo","2026-05-17","19:30"],
+  [16,"Bahia","Grêmio","2026-05-17","16:00"],[16,"Chapecoense","Remo","2026-05-17","18:30"],
+  [17,"Flamengo","Palmeiras","2026-05-23","21:00"],[17,"Vasco","Red Bull Bragantino","2026-05-24","20:30"],
+  [17,"São Paulo","Botafogo","2026-05-23","17:00"],[17,"Corinthians","Atlético-MG","2026-05-24","18:30"],
+  [17,"Mirassol","Fluminense","2026-05-23","19:00"],[17,"Cruzeiro","Chapecoense","2026-05-24","16:00"],
+  [17,"Grêmio","Santos","2026-05-23","19:00"],[17,"Coritiba","Bahia","2026-05-25","20:00"],
+  [17,"Vitória","Internacional","2026-05-23","17:00"],[17,"Remo","Athletico-PR","2026-05-24","16:00"],
   [18,"Flamengo","Coritiba","2026-05-30"],[18,"Vasco","Atlético-MG","2026-05-31"],
   [18,"Santos","Vitória","2026-05-30"],[18,"Palmeiras","Chapecoense","2026-05-30"],
   [18,"Red Bull Bragantino","Internacional","2026-05-31"],[18,"Cruzeiro","Fluminense","2026-05-30"],
@@ -257,14 +257,22 @@ const RAW = [
   [38,"Grêmio","Botafogo","2026-12-02"],[38,"Atlético-MG","Bahia","2026-12-02"],
   [38,"Corinthians","São Paulo","2026-12-02"],[38,"Fluminense","Remo","2026-12-02"],
 ];
-const MATCHES = RAW.map(([round,home,away,date],idx) => ({ id:idx+1, round, home, away, date }));
+const MATCHES = RAW.map(([round,home,away,date,time],idx) => ({ id:idx+1, round, home, away, date, time:time||"16:00" }));
 const matchesByRound = {};
 MATCHES.forEach(m => { if(!matchesByRound[m.round]) matchesByRound[m.round]=[];  matchesByRound[m.round].push(m); });
 const ROUNDS = Array.from({length:38},(_,i)=>i+1);
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
-const fmtDate = d => new Date(d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});
-const isLocked = m => new Date() >= new Date(new Date(m.date+"T10:00:00").getTime()-5*60*1000);
+const fmtDate = (d, time) => {
+  const label = new Date(d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});
+  return time ? `${label} ${time}` : label;
+};
+const isLocked = m => {
+  const [h,min] = (m.time||"16:00").split(":").map(Number);
+  const kickoff = new Date(m.date);
+  kickoff.setHours(h, min, 0, 0);
+  return new Date() >= new Date(kickoff.getTime() - 5*60*1000);
+};
 
 function calcPts(pred, real) {
   if (!real || real.home==null || real.away==null || real.home==="" || real.away==="") return null;
@@ -580,7 +588,7 @@ export default function App() {
               const ptColor = pts===25?G.success:pts>=15?"#3b82f6":pts>=10?G.warn:pts>0?G.danger:G.muted;
               return (
                 <div key={m.id} style={{ background:G.card, border:`1px solid ${hasResult&&pts!==null?ptColor+"55":G.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8 }}>
-                  <div style={{ fontSize:11, color:G.muted, marginBottom:6 }}>{fmtDate(m.date)}</div>
+                  <div style={{ fontSize:11, color:G.muted, marginBottom:6 }}>{fmtDate(m.date, m.time)}</div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     {/* Casa */}
                     <div style={{ flex:1, display:"flex", alignItems:"center", gap:5 }}>
@@ -669,7 +677,7 @@ export default function App() {
                 return (
                   <div key={m.id} style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:10, padding:"10px 12px", marginBottom:6 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                      <span style={{ fontSize:11, color:G.muted }}>{fmtDate(m.date)}</span>
+                      <span style={{ fontSize:11, color:G.muted }}>{fmtDate(m.date, m.time)}</span>
                       <span style={{ fontWeight:800, fontSize:13, color:G.text }}>{m.home} {real.home}×{real.away} {m.away}</span>
                     </div>
                     <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
