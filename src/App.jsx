@@ -116,7 +116,7 @@ const RAW = [
   [10,"Mirassol","Red Bull Bragantino","2026-04-05"],[10,"Atlético-MG","Athletico-PR","2026-04-05"],
   [10,"Grêmio","Remo","2026-04-05"],[10,"Coritiba","Fluminense","2026-04-06"],
   [10,"Bahia","Palmeiras","2026-04-05"],[10,"Chapecoense","Vitória","2026-04-05"],
-  [11,"Fluminense","Flamengo","2026-04-11","18:30"],[11,"Botafogo","Coritiba","2026-04-12","16:00"],
+  [11,"Fluminense","Flamengo","2026-04-12","18:00"],[11,"Botafogo","Coritiba","2026-04-12","16:00"],
   [11,"Santos","Atlético-MG","2026-04-11","20:00"],[11,"Corinthians","Palmeiras","2026-04-12","18:30"],
   [11,"Mirassol","Bahia","2026-04-11","18:30"],[11,"Cruzeiro","Red Bull Bragantino","2026-04-12","18:30"],
   [11,"Internacional","Grêmio","2026-04-11","20:30"],[11,"Athletico-PR","Chapecoense","2026-04-12","11:00"],
@@ -268,9 +268,9 @@ const fmtDate = (d, time) => {
   return time ? `${label} ${time}` : label;
 };
 const isLocked = m => {
-  const [h,min] = (m.time||"16:00").split(":").map(Number);
-  const kickoff = new Date(m.date);
-  kickoff.setHours(h, min, 0, 0);
+  const [h, min] = (m.time || "16:00").split(":").map(Number);
+  const [y, mo, d] = m.date.split("-").map(Number);
+  const kickoff = new Date(y, mo-1, d, h, min, 0);
   return new Date() >= new Date(kickoff.getTime() - 5*60*1000);
 };
 
@@ -351,11 +351,10 @@ export default function App() {
   // Seed palpites se vazio
   useEffect(() => {
     if (!player || isAdmin) return;
-    // Sempre usar o que está no Firebase; nunca sobrescrever automaticamente
     const saved = savedPreds[player.id] || {};
     setDraftPreds(Object.keys(saved).length > 0 ? saved : (SEED_PREDS[player.id] || {}));
     setSent(false);
-  }, [player?.id, savedPreds[player?.id]]);
+  }, [player?.id]); // só re-executa ao trocar de jogador, não a cada update do Firebase
 
   // Auto-navegar para a próxima rodada a realizar, baseado na data de hoje
   useEffect(() => {
@@ -577,7 +576,11 @@ export default function App() {
               <div style={{ fontSize:12, fontWeight:800, color:G.accent, letterSpacing:1 }}>RODADA {activeRound}</div>
               <div style={{ flex:1, height:1, background:G.border }}/>
             </div>
-            {(matchesByRound[activeRound]||[]).map(m => {
+            {(matchesByRound[activeRound]||[]).slice().sort((a,b) => {
+              const ta = new Date(a.date+"T"+(a.time||"16:00")+":00");
+              const tb = new Date(b.date+"T"+(b.time||"16:00")+":00");
+              return ta-tb;
+            }).map(m => {
               const real = results[m.id] || {};
               const pred = draftPreds[m.id] || {};
               const locked = isLocked(m);
@@ -649,8 +652,7 @@ export default function App() {
             })}
             {/* Botão Enviar */}
             <div style={{ marginTop:20 }}>
-              <button onClick={!isLocked(matchesByRound[activeRound]?.[0])||false ? handleSend : undefined}
-                disabled={saving||sent}
+              <button onClick={handleSend} disabled={saving||sent}
                 style={{ width:"100%", padding:"16px", borderRadius:12, border:"none",
                   background:sent?G.success:`linear-gradient(135deg,${G.accent},#00b894)`,
                   color:"#0a0e1a", fontSize:14, fontWeight:900, cursor:"pointer", letterSpacing:1,
@@ -954,7 +956,7 @@ export default function App() {
               <span style={{ fontSize:30 }}>🥇</span>
               <div>
                 <div style={{ fontSize:13, fontWeight:800, color:G.gold }}>Vencedor do Bolão</div>
-                <div style={{ fontSize:12, color:G.text, marginTop:3 }}>Camisa oficial do campeão do Brasileirão 2026</div>
+                <div style={{ fontSize:12, color:G.text, marginTop:3 }}>Camisa oficial de clube à escolha do vencedor</div>
               </div>
             </div>
             <div style={{ background:G.card2, borderRadius:10, padding:"13px 16px", display:"flex", alignItems:"center", gap:14 }}>
