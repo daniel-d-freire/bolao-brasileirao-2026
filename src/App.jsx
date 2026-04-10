@@ -370,12 +370,24 @@ export default function App() {
   }, []);
 
   // Seed palpites se vazio
+  // Sincronizar draftPreds com Firebase sempre que savedPreds mudar
   useEffect(() => {
     if (!player || isAdmin) return;
-    const saved = savedPreds[player.id] || {};
-    setDraftPreds(Object.keys(saved).length > 0 ? saved : (SEED_PREDS[player.id] || {}));
+    const saved = savedPreds[player.id];
+    if (saved && Object.keys(saved).length > 0) {
+      setDraftPreds(saved);
+    }
+  }, [savedPreds[player?.id]]);
+
+  // Ao fazer login, carrega SEED como placeholder enquanto Firebase não responde
+  useEffect(() => {
+    if (!player || isAdmin) return;
+    const saved = savedPreds[player.id];
+    if (!saved || Object.keys(saved).length === 0) {
+      setDraftPreds(SEED_PREDS[player.id] || {});
+    }
     setSent(false);
-  }, [player?.id]); // só re-executa ao trocar de jogador, não a cada update do Firebase
+  }, [player?.id]);
 
   // Auto-navegar para a próxima rodada a realizar, baseado na data de hoje
   useEffect(() => {
