@@ -1048,7 +1048,7 @@ export default function App() {
               const [y, mo, d] = m.date.split("-").map(Number);
               const kickoff = new Date(y, mo-1, d, h, min, 0);
               const minsLeft = (kickoff - now) / 60000;
-              if (minsLeft < 0 || minsLeft > 120) return; // só jogos nas próximas 2h
+              if (minsLeft < 0 || minsLeft > 360) return; // só jogos nas próximas 6h
               PLAYERS.forEach(p => {
                 const pred = savedPreds[p.id]?.[m.id];
                 if (!pred || pred.home==null || pred.home==="") {
