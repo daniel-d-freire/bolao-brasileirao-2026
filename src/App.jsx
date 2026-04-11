@@ -701,24 +701,28 @@ export default function App() {
       {tab==="todos" && (
         <div style={{ padding:"12px 8px" }}>
           <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent, marginBottom:14, letterSpacing:1 }}>👁 TODOS OS PALPITES</div>
-          {ROUNDS.filter(r => matchesByRound[r].some(m => {
-            const real=results[m.id]; return real?.home!=null && real?.home!=="";
-          })).reverse().map(r => (
+          {ROUNDS.filter(r => matchesByRound[r].some(m => isLocked(m))).reverse().map(r => (
             <div key={r} style={{ marginBottom:20 }}>
               <div style={{ fontSize:11, fontWeight:800, color:G.muted, letterSpacing:1, marginBottom:10 }}>RODADA {r}</div>
-              {matchesByRound[r].map(m => {
+              {matchesByRound[r].filter(m => isLocked(m)).sort((a,b)=>{
+                const ta=new Date(a.date+"T"+(a.time||"16:00")+":00");
+                const tb=new Date(b.date+"T"+(b.time||"16:00")+":00");
+                return ta-tb;
+              }).map(m => {
                 const real = results[m.id];
-                if (!real || real.home==null || real.home==="") return null;
+                const hasResult = real?.home!=null && real?.home!=="";
                 return (
                   <div key={m.id} style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:10, padding:"10px 12px", marginBottom:6 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
                       <span style={{ fontSize:11, color:G.muted }}>{fmtDate(m.date, m.time)}</span>
-                      <span style={{ fontWeight:800, fontSize:13, color:G.text }}>{m.home} {real.home}×{real.away} {m.away}</span>
+                      <span style={{ fontWeight:800, fontSize:13, color:G.text }}>
+                        {m.home} {hasResult?`${real.home}×${real.away}`:"× (ag. resultado)"} {m.away}
+                      </span>
                     </div>
                     <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
                       {PLAYERS.map(p => {
                         const pp = savedPreds[p.id]?.[m.id];
-                        const pts = calcPts(pp, real);
+                        const pts = hasResult ? calcPts(pp, real) : null;
                         const bg = pts===25?"#14532d":pts>=15?"#1e3a8a":pts>=10?"#78350f":pts>0?"#7f1d1d":G.card2;
                         const isMe = p.id===player?.id;
                         return (
