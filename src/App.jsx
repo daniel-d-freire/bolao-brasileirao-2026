@@ -316,6 +316,7 @@ export default function App() {
   const [tab, setTab]         = useState("jogos");
   const [activeRound, setActiveRound] = useState(10);
   const stripRef = useRef(null);
+  const adminStripRef = useRef(null);
 
   const [loginName, setLoginName] = useState("");
   const [loginPass, setLoginPass] = useState("");
@@ -406,6 +407,25 @@ export default function App() {
       el?.scrollIntoView({ inline:"center", behavior:"smooth" });
     }, 200);
   }, [tab, player?.id]);
+
+  // Admin: auto-scroll para rodada atual na seção de resultados
+  useEffect(() => {
+    if (tab !== "admin" || !isAdmin) return;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const hasToday = ROUNDS.find(r => matchesByRound[r].some(m => {
+      const d = new Date(m.date+"T12:00:00"); d.setHours(0,0,0,0);
+      return d.getTime()===today.getTime();
+    }));
+    const nextRound = ROUNDS.find(r => {
+      const d = new Date(matchesByRound[r][0].date+"T12:00:00"); return d >= today;
+    });
+    const target = hasToday ?? nextRound ?? 38;
+    setActiveRound(target);
+    setTimeout(() => {
+      const el = adminStripRef.current?.querySelector(`[data-round="${target}"]`);
+      el?.scrollIntoView({ inline:"center", behavior:"smooth" });
+    }, 300);
+  }, [tab, isAdmin]);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   function handleLogin() {
@@ -545,8 +565,8 @@ export default function App() {
           })()}
           <input value={loginName} onChange={e=>setLoginName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()}
             placeholder="Usuário" style={{ width:"100%", padding:"12px 14px", marginBottom:10, background:G.card2, border:`1px solid ${G.border}`, borderRadius:10, color:G.text, fontSize:14, boxSizing:"border-box", outline:"none" }}/>
-          <input value={loginPass} onChange={e=>setLoginPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()}
-            type="password" placeholder="Senha" style={{ width:"100%", padding:"12px 14px", marginBottom:16, background:G.card2, border:`1px solid ${G.border}`, borderRadius:10, color:G.text, fontSize:14, boxSizing:"border-box", outline:"none" }}/>
+          <input value={loginPass} onChange={e=>setLoginPass(e.target.value.replace(/\D/g,""))} onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+            type="number" inputMode="numeric" pattern="[0-9]*" placeholder="Senha (números)" style={{ width:"100%", padding:"12px 14px", marginBottom:16, background:G.card2, border:`1px solid ${G.border}`, borderRadius:10, color:G.text, fontSize:14, boxSizing:"border-box", outline:"none" }}/>
           {loginErr && <div style={{ color:G.danger, fontSize:12, marginBottom:10, textAlign:"center" }}>{loginErr}</div>}
           <button onClick={handleLogin} style={{ width:"100%", padding:"14px", borderRadius:12, border:"none", background:`linear-gradient(135deg,${G.accent},#00b894)`, color:"#0a0e1a", fontSize:15, fontWeight:900, cursor:"pointer", letterSpacing:1, boxShadow:`0 4px 16px ${G.accent}44` }}>
             ENTRAR
@@ -1166,7 +1186,7 @@ export default function App() {
           {/* Resultados por rodada */}
           <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18 }}>
             <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>📝 INSERIR RESULTADOS</div>
-            <div ref={stripRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
+            <div ref={adminStripRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
               {ROUNDS.map(r => {
                 const done = matchesByRound[r].every(m => results[m.id]?.home!=null && results[m.id]?.home!=="");
                 return (
