@@ -964,6 +964,147 @@ export default function App() {
               </div>
             );
           })()}
+
+          {/* ── CARD: Pontos por Rodada ─────────────────────────────────── */}
+          {(() => {
+            // Calcular pontos por rodada por jogador
+            const roundData = ROUNDS.map(r => {
+              const matches = matchesByRound[r] || [];
+              const hasResults = matches.some(m => {
+                const res = results[m.id];
+                return res?.home!=null && res?.home!=="";
+              });
+              if (!hasResults) return null;
+              const playerPts = PLAYERS.map(p => {
+                let pts = 0;
+                matches.forEach(m => {
+                  const res = results[m.id];
+                  if (!res || res.home==null || res.home==="") return;
+                  const pred = savedPreds[p.id]?.[m.id];
+                  pts += calcPts(pred, res) || 0;
+                });
+                return { id: p.id, name: p.name, pts };
+              });
+              const maxPts = Math.max(...playerPts.map(p => p.pts), 1);
+              const minPts = Math.min(...playerPts.map(p => p.pts));
+              return { round: r, playerPts, maxPts, minPts };
+            }).filter(Boolean);
+
+            if (roundData.length === 0) return null;
+
+            // Vencedor de cada rodada
+            const roundWinners = roundData.map(rd => {
+              const max = Math.max(...rd.playerPts.map(p => p.pts));
+              return rd.playerPts.filter(p => p.pts === max).map(p => p.id);
+            });
+
+            // Cores do heatmap
+            const cellColor = (pts, min, max) => {
+              if (max === min) return G.card2;
+              const ratio = (pts - min) / (max - min);
+              if (ratio >= 0.8) return "#14532d";
+              if (ratio >= 0.6) return "#166534";
+              if (ratio >= 0.4) return "#78350f";
+              if (ratio >= 0.2) return "#7f1d1d33";
+              return "#7f1d1d";
+            };
+
+            // Totais por rodada
+            const playerColors = ["#00d4aa","#ff6b35","#ffd700","#8b5cf6","#ef4444","#3b82f6","#22c55e"];
+
+            return (
+              <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14 }}>
+                <div style={{ fontWeight:900, fontSize:14, color:"#8b5cf6", marginBottom:4 }}>📊 PONTOS POR RODADA</div>
+                <div style={{ fontSize:11, color:G.muted, marginBottom:16 }}>🟢 melhor da rodada · 🔴 pior da rodada · 🏆 vencedor</div>
+
+                {/* Tabela scrollável */}
+                <div style={{ overflowX:"auto", marginBottom:16 }}>
+                  <table style={{ borderCollapse:"collapse", fontSize:11, width:"100%", minWidth: `${60 + roundData.length * 44}px` }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign:"left", padding:"4px 8px", color:G.muted, fontWeight:800, minWidth:72, position:"sticky", left:0, background:G.card }}>Jogador</th>
+                        {roundData.map(rd => (
+                          <th key={rd.round} style={{ textAlign:"center", padding:"4px 6px", color:G.muted, fontWeight:800, minWidth:38 }}>R{rd.round}</th>
+                        ))}
+                        <th style={{ textAlign:"center", padding:"4px 8px", color:G.accent, fontWeight:900, minWidth:44 }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {PLAYERS.map((p, pi) => {
+                        const total = roundData.reduce((sum, rd) => {
+                          return sum + (rd.playerPts.find(x => x.id===p.id)?.pts || 0);
+                        }, 0);
+                        return (
+                          <tr key={p.id}>
+                            <td style={{ padding:"4px 8px", fontWeight: p.id===player?.id?900:700, color: p.id===player?.id?G.accent:G.text, position:"sticky", left:0, background:G.card }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                                <div style={{ width:8, height:8, borderRadius:"50%", background:playerColors[pi], flexShrink:0 }}/>
+                                {p.name}
+                              </div>
+                            </td>
+                            {roundData.map((rd, ri) => {
+                              const pp = rd.playerPts.find(x => x.id===p.id);
+                              const pts = pp?.pts ?? 0;
+                              const isWinner = roundWinners[ri].includes(p.id);
+                              const bg = cellColor(pts, rd.minPts, rd.maxPts);
+                              return (
+                                <td key={rd.round} style={{ textAlign:"center", padding:"4px 3px" }}>
+                                  <div style={{ background:bg, borderRadius:6, padding:"4px 2px", position:"relative" }}>
+                                    <span style={{ fontWeight:900, color:G.text }}>{pts}</span>
+                                    {isWinner && pts > 0 && <span style={{ position:"absolute", top:-3, right:-2, fontSize:8 }}>🏆</span>}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                            <td style={{ textAlign:"center", padding:"4px 8px", fontWeight:900, color:G.accent, fontSize:12 }}>{total}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ borderTop:`1px solid ${G.border}` }}>
+                        <td style={{ padding:"6px 8px", fontWeight:800, color:G.muted, fontSize:10, position:"sticky", left:0, background:G.card }}>MÁX</td>
+                        {roundData.map(rd => (
+                          <td key={rd.round} style={{ textAlign:"center", padding:"6px 3px", fontWeight:800, color:G.success, fontSize:10 }}>{rd.maxPts}</td>
+                        ))}
+                        <td/>
+                      </tr>
+                      <tr>
+                        <td style={{ padding:"4px 8px", fontWeight:800, color:G.muted, fontSize:10, position:"sticky", left:0, background:G.card }}>MÍN</td>
+                        {roundData.map(rd => (
+                          <td key={rd.round} style={{ textAlign:"center", padding:"4px 3px", fontWeight:800, color:G.danger, fontSize:10 }}>{rd.minPts}</td>
+                        ))}
+                        <td/>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Mini ranking de vencedores de rodada */}
+                {(() => {
+                  const wins = {};
+                  PLAYERS.forEach(p => wins[p.id] = 0);
+                  roundWinners.forEach(wList => wList.forEach(id => wins[id] = (wins[id]||0) + 1));
+                  const sorted = PLAYERS.map(p => ({ ...p, wins: wins[p.id]||0 })).filter(p => p.wins > 0).sort((a,b) => b.wins-a.wins);
+                  if (sorted.length === 0) return null;
+                  return (
+                    <div style={{ borderTop:`1px solid ${G.border}`, paddingTop:12 }}>
+                      <div style={{ fontSize:11, fontWeight:800, color:G.muted, marginBottom:8 }}>🏆 VENCEDOR DE RODADAS</div>
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                        {sorted.map((p, i) => (
+                          <div key={p.id} style={{ background:G.card2, borderRadius:20, padding:"4px 12px", display:"flex", alignItems:"center", gap:6 }}>
+                            <span style={{ fontSize:12 }}>{["🥇","🥈","🥉"][i]||""}</span>
+                            <span style={{ fontSize:12, fontWeight:700, color:p.id===player?.id?G.accent:G.text }}>{p.name}</span>
+                            <span style={{ fontSize:12, fontWeight:900, color:G.gold }}>{p.wins}x</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          })()}
         </div>
       )}
 
