@@ -536,9 +536,9 @@ export default function App() {
         </svg>
         <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:20, padding:"36px 28px", width:"100%", maxWidth:340, position:"relative", zIndex:1, boxShadow:`0 20px 60px #00000066` }}>
           <div style={{ textAlign:"center", marginBottom:28 }}>
-            <div style={{ fontSize:48, marginBottom:4 }}>🇧🇷</div>
+            <img src="/logo_brasileirao.png" alt="Brasileirão Betano" style={{ width:120, marginBottom:4, filter:"drop-shadow(0 4px 16px rgba(0,0,0,0.5))" }} />
             <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:24, fontWeight:900, color:G.text, letterSpacing:4 }}>BOLÃO</div>
-            <div style={{ fontSize:10, color:G.accent, letterSpacing:3, fontWeight:700, marginTop:4 }}>BRASILEIRÃO SÉRIE A 2026</div>
+            <div style={{ fontSize:10, color:"#ffffff", letterSpacing:3, fontWeight:700, marginTop:4 }}>BRASILEIRÃO SÉRIE A 2026</div>
           </div>
           {/* Salvo? */}
           {(() => {
@@ -1018,63 +1018,62 @@ export default function App() {
                 <div style={{ fontSize:11, color:G.muted, marginBottom:16 }}>🟢 melhor da rodada · 🔴 pior da rodada · 🏆 vencedor</div>
 
                 {/* Tabela scrollável */}
-                <div style={{ overflowX:"auto", marginBottom:16 }}>
-                  <table style={{ borderCollapse:"collapse", fontSize:11, width:"100%", minWidth: `${60 + roundData.length * 44}px` }}>
+                <div style={{ overflowX:"auto", borderRadius:10, border:`1px solid ${G.border}` }}>
+                  <table style={{ borderCollapse:"collapse", fontSize:12, tableLayout:"fixed" }}>
                     <thead>
-                      <tr>
-                        <th style={{ textAlign:"left", padding:"4px 8px", color:G.muted, fontWeight:800, minWidth:72, position:"sticky", left:0, background:G.card }}>Jogador</th>
+                      <tr style={{ background:G.card2 }}>
+                        <th style={{ textAlign:"left", padding:"8px 12px", color:G.muted, fontWeight:800, width:90, position:"sticky", left:0, zIndex:10, background:G.card2, borderRight:`1px solid ${G.border}` }}>Jogador</th>
                         {roundData.map(rd => (
-                          <th key={rd.round} style={{ textAlign:"center", padding:"4px 6px", color:G.muted, fontWeight:800, minWidth:38 }}>R{rd.round}</th>
+                          <th key={rd.round} style={{ textAlign:"center", padding:"8px 4px", color:G.muted, fontWeight:800, width:46 }}>R{rd.round}</th>
                         ))}
-                        <th style={{ textAlign:"center", padding:"4px 8px", color:G.accent, fontWeight:900, minWidth:44 }}>Total</th>
+                        <th style={{ textAlign:"center", padding:"8px 10px", color:G.accent, fontWeight:900, width:52, borderLeft:`1px solid ${G.border}` }}>TOTAL</th>
                       </tr>
                     </thead>
                     <tbody>
                       {PLAYERS.map((p, pi) => {
-                        const total = roundData.reduce((sum, rd) => {
-                          return sum + (rd.playerPts.find(x => x.id===p.id)?.pts || 0);
-                        }, 0);
+                        const total = roundData.reduce((sum, rd) => sum + (rd.playerPts.find(x=>x.id===p.id)?.pts||0), 0);
+                        const isMe = p.id===player?.id;
                         return (
-                          <tr key={p.id}>
-                            <td style={{ padding:"4px 8px", fontWeight: p.id===player?.id?900:700, color: p.id===player?.id?G.accent:G.text, position:"sticky", left:0, background:G.card }}>
-                              <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                          <tr key={p.id} style={{ borderTop:`1px solid ${G.border}22`, background: isMe?G.accent+"0a":"transparent" }}>
+                            <td style={{ padding:"7px 12px", position:"sticky", left:0, zIndex:10, background: isMe?`#0a2020`:G.card, borderRight:`1px solid ${G.border}` }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap" }}>
                                 <div style={{ width:8, height:8, borderRadius:"50%", background:playerColors[pi], flexShrink:0 }}/>
-                                {p.name}
+                                <span style={{ fontWeight:isMe?900:700, color:isMe?G.accent:G.text, fontSize:11 }}>{p.name}</span>
                               </div>
                             </td>
                             {roundData.map((rd, ri) => {
-                              const pp = rd.playerPts.find(x => x.id===p.id);
+                              const pp = rd.playerPts.find(x=>x.id===p.id);
                               const pts = pp?.pts ?? 0;
-                              const isWinner = roundWinners[ri].includes(p.id);
+                              const isWinner = roundWinners[ri].includes(p.id) && pts > 0;
                               const bg = cellColor(pts, rd.minPts, rd.maxPts);
                               return (
-                                <td key={rd.round} style={{ textAlign:"center", padding:"4px 3px" }}>
-                                  <div style={{ background:bg, borderRadius:6, padding:"4px 2px", position:"relative" }}>
-                                    <span style={{ fontWeight:900, color:G.text }}>{pts}</span>
-                                    {isWinner && pts > 0 && <span style={{ position:"absolute", top:-3, right:-2, fontSize:8 }}>🏆</span>}
+                                <td key={rd.round} style={{ textAlign:"center", padding:"5px 3px" }}>
+                                  <div style={{ background:bg, borderRadius:7, padding:"5px 3px", margin:"0 2px", position:"relative" }}>
+                                    <span style={{ fontWeight:900, color:"#fff", fontSize:12 }}>{pts}</span>
+                                    {isWinner && <span style={{ position:"absolute", top:-4, right:-2, fontSize:9, lineHeight:1 }}>🏆</span>}
                                   </div>
                                 </td>
                               );
                             })}
-                            <td style={{ textAlign:"center", padding:"4px 8px", fontWeight:900, color:G.accent, fontSize:12 }}>{total}</td>
+                            <td style={{ textAlign:"center", padding:"7px 10px", fontWeight:900, color:G.accent, fontSize:13, borderLeft:`1px solid ${G.border}` }}>{total}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
-                      <tr style={{ borderTop:`1px solid ${G.border}` }}>
-                        <td style={{ padding:"6px 8px", fontWeight:800, color:G.muted, fontSize:10, position:"sticky", left:0, background:G.card }}>MÁX</td>
+                      <tr style={{ borderTop:`2px solid ${G.border}`, background:G.card2 }}>
+                        <td style={{ padding:"6px 12px", fontWeight:800, color:G.muted, fontSize:10, position:"sticky", left:0, zIndex:10, background:G.card2, borderRight:`1px solid ${G.border}` }}>MÁX RD</td>
                         {roundData.map(rd => (
                           <td key={rd.round} style={{ textAlign:"center", padding:"6px 3px", fontWeight:800, color:G.success, fontSize:10 }}>{rd.maxPts}</td>
                         ))}
-                        <td/>
+                        <td style={{ borderLeft:`1px solid ${G.border}` }}/>
                       </tr>
-                      <tr>
-                        <td style={{ padding:"4px 8px", fontWeight:800, color:G.muted, fontSize:10, position:"sticky", left:0, background:G.card }}>MÍN</td>
+                      <tr style={{ background:G.card2 }}>
+                        <td style={{ padding:"6px 12px", fontWeight:800, color:G.muted, fontSize:10, position:"sticky", left:0, zIndex:10, background:G.card2, borderRight:`1px solid ${G.border}` }}>MÍN RD</td>
                         {roundData.map(rd => (
-                          <td key={rd.round} style={{ textAlign:"center", padding:"4px 3px", fontWeight:800, color:G.danger, fontSize:10 }}>{rd.minPts}</td>
+                          <td key={rd.round} style={{ textAlign:"center", padding:"6px 3px", fontWeight:800, color:G.danger, fontSize:10 }}>{rd.minPts}</td>
                         ))}
-                        <td/>
+                        <td style={{ borderLeft:`1px solid ${G.border}` }}/>
                       </tr>
                     </tfoot>
                   </table>
