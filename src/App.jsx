@@ -1228,7 +1228,7 @@ export default function App() {
             );
             return (
               <div style={{ background:"#7f1d1d22", border:`1px solid ${G.danger}55`, borderRadius:12, padding:"14px 16px", marginBottom:14 }}>
-                <div style={{ fontWeight:900, fontSize:13, color:G.danger, marginBottom:10 }}>⚠️ PALPITES FALTANDO — MENOS DE 2H</div>
+                <div style={{ fontWeight:900, fontSize:13, color:G.danger, marginBottom:10 }}>⚠️ PALPITES FALTANDO — MENOS DE 6H</div>
                 {alerts.map((a, i) => (
                   <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 0", borderBottom:`1px solid ${G.danger}22` }}>
                     <div>
