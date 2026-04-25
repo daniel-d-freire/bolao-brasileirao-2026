@@ -1223,7 +1223,7 @@ export default function App() {
             if (alerts.length === 0) return (
               <div style={{ background:"#14532d22", border:`1px solid ${G.success}44`, borderRadius:12, padding:"12px 16px", marginBottom:14, display:"flex", alignItems:"center", gap:10 }}>
                 <span style={{ fontSize:18 }}>✅</span>
-                <span style={{ fontSize:13, color:G.success, fontWeight:700 }}>Todos os jogadores palpitaram nos jogos das próximas 2 horas</span>
+                <span style={{ fontSize:13, color:G.success, fontWeight:700 }}>Todos os jogadores palpitaram nos jogos das próximas 6 horas</span>
               </div>
             );
             return (
@@ -1240,6 +1240,7 @@ export default function App() {
                     </span>
                   </div>
                 ))}
+                <a href={`https://wa.me/?text=${encodeURIComponent('⚠️ *Bolão Brasileirão 2026*\n\nFaltando palpitar nas próximas 6h:\n\n' + alerts.map(a => '• *' + a.player + '* — ' + a.match + ' (' + a.minsLeft + 'min)').join('\n') + '\n\n👉 https://bolao-brasileirao-2026-bolao.vercel.app')}`} target="_blank" rel="noreferrer" style={{ display:"block", marginTop:14, padding:"12px 16px", background:"#25D366", color:"#fff", textAlign:"center", borderRadius:10, textDecoration:"none", fontWeight:900, fontSize:13, letterSpacing:0.5 }}>📱 ENVIAR LEMBRETE NO WHATSAPP</a>
               </div>
             );
           })()}
