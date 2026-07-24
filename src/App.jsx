@@ -733,7 +733,11 @@ export default function App() {
           <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent, marginBottom:14, letterSpacing:1 }}>👁 TODOS OS PALPITES</div>
           {ROUNDS.filter(r => matchesByRound[r].some(m => isLocked(m))).reverse().map(r => (
             <div key={r} style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:G.muted, letterSpacing:1, marginBottom:10 }}>RODADA {r}</div>
+              <div style={{ display:"flex", alignItems:"center", gap:10, margin:"18px 0 12px" }}>
+                <div style={{ flex:1, height:2, background:G.accent+"66", borderRadius:2 }}/>
+                <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:16, fontWeight:900, color:G.accent, letterSpacing:1.5, background:G.accent+"1a", padding:"5px 16px", borderRadius:20, border:`1px solid ${G.accent}66` }}>RODADA {r}</div>
+                <div style={{ flex:1, height:2, background:G.accent+"66", borderRadius:2 }}/>
+              </div>
               {matchesByRound[r].filter(m => isLocked(m)).sort((a,b)=>{
                 const ta=new Date(a.date+"T"+(a.time||"16:00")+":00");
                 const tb=new Date(b.date+"T"+(b.time||"16:00")+":00");
@@ -1213,6 +1217,42 @@ export default function App() {
         <div style={{ padding:"12px 8px" }}>
           <div style={{ fontFamily:"'Arial Black',sans-serif", fontSize:20, fontWeight:900, color:G.accent2, marginBottom:14 }}>⚙️ PAINEL DO ADMIN</div>
 
+          {/* Resultados por rodada */}
+          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18, marginBottom:14 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>📝 INSERIR RESULTADOS</div>
+            <div ref={adminStripRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
+              {ROUNDS.map(r => {
+                const done = matchesByRound[r].every(m => results[m.id]?.home!=null && results[m.id]?.home!=="");
+                return (
+                  <button key={r} data-round={r} onClick={()=>setActiveRound(r)}
+                    style={{ flexShrink:0, padding:"5px 10px", borderRadius:7, border:`2px solid ${r===activeRound?G.accent2:G.border}`,
+                      background:r===activeRound?G.accent2+"22":G.card, color:r===activeRound?G.accent2:G.muted,
+                      fontSize:11, fontWeight:800, cursor:"pointer", position:"relative" }}>
+                    R{r}
+                    {done && <span style={{ position:"absolute", top:-3, right:-3, background:G.success, borderRadius:"50%", width:7, height:7, display:"block" }}/>}
+                  </button>
+                );
+              })}
+            </div>
+            {(matchesByRound[activeRound]||[]).map(m => (
+              <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:`1px solid ${G.border}22` }}>
+                <span style={{ fontSize:11, color:G.muted, minWidth:20 }}>{m.round}</span>
+                <span style={{ fontSize:12, color:G.text, flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.home} × {m.away}</span>
+                <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
+                  <input type="number" min="0" max="20"
+                    value={results[m.id]?.home ?? ""}
+                    onChange={e => setResult(m.id,"home",e.target.value===""?"":Number(e.target.value))}
+                    style={{ width:38, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:7, padding:"5px 2px", fontSize:15, fontWeight:800, outline:"none" }}/>
+                  <span style={{ color:G.muted }}>×</span>
+                  <input type="number" min="0" max="20"
+                    value={results[m.id]?.away ?? ""}
+                    onChange={e => setResult(m.id,"away",e.target.value===""?"":Number(e.target.value))}
+                    style={{ width:38, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:7, padding:"5px 2px", fontSize:15, fontWeight:800, outline:"none" }}/>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* ── ALERTAS: jogos em menos de 2h sem palpite ── */}
           {(() => {
             const now = new Date();
@@ -1330,42 +1370,6 @@ export default function App() {
                       {s.toUpperCase()}
                     </button>
                   ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Resultados por rodada */}
-          <div style={{ background:G.card, border:`1px solid ${G.border}`, borderRadius:14, padding:18 }}>
-            <div style={{ fontWeight:900, fontSize:14, color:G.accent, marginBottom:14 }}>📝 INSERIR RESULTADOS</div>
-            <div ref={adminStripRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
-              {ROUNDS.map(r => {
-                const done = matchesByRound[r].every(m => results[m.id]?.home!=null && results[m.id]?.home!=="");
-                return (
-                  <button key={r} data-round={r} onClick={()=>setActiveRound(r)}
-                    style={{ flexShrink:0, padding:"5px 10px", borderRadius:7, border:`2px solid ${r===activeRound?G.accent2:G.border}`,
-                      background:r===activeRound?G.accent2+"22":G.card, color:r===activeRound?G.accent2:G.muted,
-                      fontSize:11, fontWeight:800, cursor:"pointer", position:"relative" }}>
-                    R{r}
-                    {done && <span style={{ position:"absolute", top:-3, right:-3, background:G.success, borderRadius:"50%", width:7, height:7, display:"block" }}/>}
-                  </button>
-                );
-              })}
-            </div>
-            {(matchesByRound[activeRound]||[]).map(m => (
-              <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:`1px solid ${G.border}22` }}>
-                <span style={{ fontSize:11, color:G.muted, minWidth:20 }}>{m.round}</span>
-                <span style={{ fontSize:12, color:G.text, flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.home} × {m.away}</span>
-                <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
-                  <input type="number" min="0" max="20"
-                    value={results[m.id]?.home ?? ""}
-                    onChange={e => setResult(m.id,"home",e.target.value===""?"":Number(e.target.value))}
-                    style={{ width:38, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:7, padding:"5px 2px", fontSize:15, fontWeight:800, outline:"none" }}/>
-                  <span style={{ color:G.muted }}>×</span>
-                  <input type="number" min="0" max="20"
-                    value={results[m.id]?.away ?? ""}
-                    onChange={e => setResult(m.id,"away",e.target.value===""?"":Number(e.target.value))}
-                    style={{ width:38, textAlign:"center", background:G.card2, border:`1px solid ${G.border}`, color:G.text, borderRadius:7, padding:"5px 2px", fontSize:15, fontWeight:800, outline:"none" }}/>
                 </div>
               </div>
             ))}
