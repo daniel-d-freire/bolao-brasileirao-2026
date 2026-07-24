@@ -580,7 +580,7 @@ export default function App() {
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
   const tabs = isAdmin
-    ? [{id:"admin",label:"⚙️ Admin"}]
+    ? [{id:"admin",label:"⚙️ Admin"},{id:"todos",label:"👁 Todos"},{id:"ranking",label:"🏆 Ranking"},{id:"stats",label:"📈 Stats"}]
     : [{id:"jogos",label:"⚽ Jogos"},{id:"todos",label:"👁 Todos"},{id:"ranking",label:"🏆 Ranking"},{id:"tabela",label:"📋 Tabela"},{id:"stats",label:"📈 Stats"},{id:"infos",label:"ℹ️ Infos"}];
 
   return (
