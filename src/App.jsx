@@ -166,11 +166,11 @@ const RAW = [
   [20,"Red Bull Bragantino","Coritiba","2026-07-26","18:30"],[20,"Cruzeiro","Botafogo","2026-07-26","16:00"],
   [20,"Grêmio","Fluminense","2026-07-26","18:30"],[20,"Athletico-PR","Internacional","2026-07-25","18:30"],
   [20,"Bahia","Corinthians","2026-07-26","16:00"],[20,"Remo","Vitória","2026-07-26","19:30"],
-  [21,"Fluminense","Bahia","2026-07-29","21:30"],[21,"Botafogo","Grêmio","2026-07-29"],
-  [21,"São Paulo","Santos","2026-07-29"],[21,"Corinthians","Athletico-PR","2026-07-30","19:30"],
-  [21,"Mirassol","Remo","2026-07-29","19:30"],[21,"Atlético-MG","Red Bull Bragantino","2026-07-30"],
+  [21,"Fluminense","Bahia","2026-07-29","21:30"],[21,"Botafogo","Grêmio",null],
+  [21,"São Paulo","Santos",null],[21,"Corinthians","Athletico-PR","2026-07-30","19:30"],
+  [21,"Mirassol","Remo","2026-07-29","19:30"],[21,"Atlético-MG","Red Bull Bragantino",null],
   [21,"Internacional","Flamengo","2026-07-29","19:30"],[21,"Coritiba","Cruzeiro","2026-07-30","21:30"],
-  [21,"Vitória","Palmeiras","2026-07-29","21:30"],[21,"Chapecoense","Vasco","2026-07-29"],
+  [21,"Vitória","Palmeiras","2026-07-29","21:30"],[21,"Chapecoense","Vasco",null],
   [22,"Flamengo","Vitória","2026-08-09","19:30"],[22,"Botafogo","Fluminense","2026-08-08","21:00"],
   [22,"Santos","Athletico-PR","2026-08-09","18:30"],[22,"Palmeiras","Internacional","2026-08-09","16:00"],
   [22,"Red Bull Bragantino","Corinthians","2026-08-09","18:30"],[22,"Cruzeiro","Mirassol","2026-08-09","11:00"],
@@ -257,17 +257,19 @@ const RAW = [
   [38,"Grêmio","Botafogo","2026-12-02"],[38,"Atlético-MG","Bahia","2026-12-02"],
   [38,"Corinthians","São Paulo","2026-12-02"],[38,"Fluminense","Remo","2026-12-02"],
 ];
-const MATCHES = RAW.map(([round,home,away,date,time],idx) => ({ id:idx+1, round, home, away, date, time:time||"16:00" }));
+const MATCHES = RAW.map(([round,home,away,date,time],idx) => ({ id:idx+1, round, home, away, date, time:time||"16:00", adiado: !date }));
 const matchesByRound = {};
 MATCHES.forEach(m => { if(!matchesByRound[m.round]) matchesByRound[m.round]=[];  matchesByRound[m.round].push(m); });
 const ROUNDS = Array.from({length:38},(_,i)=>i+1);
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 const fmtDate = (d, time) => {
+  if (!d) return "⏳ Data a definir";
   const label = new Date(d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});
   return time ? `${label} ${time}` : label;
 };
 const isLocked = m => {
+  if (!m.date) return false; // jogo adiado sem data: palpite sempre liberado
   const [h, min] = (m.time || "16:00").split(":").map(Number);
   const [y, mo, d] = m.date.split("-").map(Number);
   const kickoff = new Date(y, mo-1, d, h, min, 0);
@@ -630,8 +632,9 @@ export default function App() {
               <div style={{ flex:1, height:1, background:G.border }}/>
             </div>
             {(matchesByRound[activeRound]||[]).slice().sort((a,b) => {
-              const ta = new Date(a.date+"T"+(a.time||"16:00")+":00");
-              const tb = new Date(b.date+"T"+(b.time||"16:00")+":00");
+              const ta = a.date ? new Date(a.date+"T"+(a.time||"16:00")+":00").getTime() : Infinity;
+              const tb = b.date ? new Date(b.date+"T"+(b.time||"16:00")+":00").getTime() : Infinity;
+              if (ta === tb) return 0;
               return ta-tb;
             }).map(m => {
               const real = results[m.id] || {};
@@ -644,7 +647,14 @@ export default function App() {
               const ptColor = pts===25?G.success:pts>=15?"#3b82f6":pts>=10?G.warn:pts>0?G.danger:G.muted;
               return (
                 <div key={m.id} style={{ background:G.card, border:`1px solid ${hasResult&&pts!==null?ptColor+"55":G.border}`, borderRadius:12, padding:"12px 14px", marginBottom:8 }}>
-                  <div style={{ fontSize:11, color:G.muted, marginBottom:6 }}>{fmtDate(m.date, m.time)}</div>
+                  <div style={{ fontSize:11, color:G.muted, marginBottom:6, display:"flex", alignItems:"center", gap:6 }}>
+                    {m.adiado ? (
+                      <>
+                        <span style={{ background:"#78350f", color:"#fbbf24", fontWeight:800, fontSize:10, padding:"2px 8px", borderRadius:6, letterSpacing:0.5 }}>⏳ ADIADO — DATA A DEFINIR</span>
+                        <span style={{ color:"#4ade80", fontSize:10, fontWeight:700 }}>palpite liberado</span>
+                      </>
+                    ) : fmtDate(m.date, m.time)}
+                  </div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     {/* Casa */}
                     <div style={{ flex:1, display:"flex", alignItems:"center", gap:5 }}>
@@ -1208,6 +1218,7 @@ export default function App() {
             const now = new Date();
             const alerts = [];
             MATCHES.forEach(m => {
+              if (!m.date) return; // jogo adiado sem data: sem alerta
               const [h, min] = (m.time||"16:00").split(":").map(Number);
               const [y, mo, d] = m.date.split("-").map(Number);
               const kickoff = new Date(y, mo-1, d, h, min, 0);
