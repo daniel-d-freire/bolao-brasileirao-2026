@@ -81,7 +81,7 @@ const RAW = [
   [3,"Mirassol","Cruzeiro","2026-02-11"],[3,"Atlético-MG","Remo","2026-02-12"],
   [3,"Internacional","Palmeiras","2026-02-11"],[3,"Athletico-PR","Santos","2026-02-12"],
   [3,"Vitória","Flamengo","2026-02-11"],[3,"Chapecoense","Coritiba","2026-02-12"],
-  [4,"Flamengo","Mirassol","2026-02-25"],[4,"Botafogo","Vitória","2026-02-25"],
+  [4,"Flamengo","Mirassol","2026-09-02","19:30"],[4,"Botafogo","Vitória","2026-02-25"],
   [4,"Santos","Vasco","2026-02-25"],[4,"Palmeiras","Fluminense","2026-02-25"],
   [4,"Red Bull Bragantino","Athletico-PR","2026-02-25"],[4,"Cruzeiro","Corinthians","2026-02-25"],
   [4,"Grêmio","Atlético-MG","2026-02-26"],[4,"Coritiba","São Paulo","2026-02-26"],
@@ -186,16 +186,16 @@ const RAW = [
   [24,"Red Bull Bragantino","Grêmio","2026-08-23","16:00"],[24,"Cruzeiro","Flamengo","2026-08-22","20:30"],
   [24,"Internacional","Atlético-MG","2026-08-22","18:30"],[24,"Coritiba","Corinthians","2026-08-23","19:30"],
   [24,"Vitória","Bahia","2026-08-23","16:00"],[24,"Chapecoense","São Paulo","2026-08-23","18:30"],
-  [25,"Flamengo","Botafogo","2026-08-29"],[25,"Vasco","Cruzeiro","2026-08-30"],
-  [25,"São Paulo","Red Bull Bragantino","2026-08-29"],[25,"Corinthians","Santos","2026-08-29"],
-  [25,"Mirassol","Palmeiras","2026-08-29"],[25,"Atlético-MG","Vitória","2026-08-30"],
-  [25,"Grêmio","Chapecoense","2026-08-30"],[25,"Athletico-PR","Fluminense","2026-08-29"],
-  [25,"Bahia","Internacional","2026-08-30"],[25,"Remo","Coritiba","2026-08-31"],
-  [26,"Fluminense","Vasco","2026-09-05"],[26,"Botafogo","Palmeiras","2026-09-06"],
-  [26,"São Paulo","Atlético-MG","2026-09-05"],[26,"Corinthians","Chapecoense","2026-09-05"],
-  [26,"Red Bull Bragantino","Bahia","2026-09-06"],[26,"Cruzeiro","Athletico-PR","2026-09-05"],
-  [26,"Internacional","Santos","2026-09-06"],[26,"Coritiba","Mirassol","2026-09-05"],
-  [26,"Vitória","Grêmio","2026-09-07"],[26,"Remo","Flamengo","2026-09-06"],
+  [25,"Flamengo","Botafogo","2026-08-30","16:00"],[25,"Vasco","Cruzeiro","2026-08-29","21:20"],
+  [25,"São Paulo","Red Bull Bragantino","2026-08-29","20:00"],[25,"Corinthians","Santos","2026-08-30","16:00"],
+  [25,"Mirassol","Palmeiras","2026-08-30","18:30"],[25,"Atlético-MG","Vitória","2026-08-29","18:30"],
+  [25,"Grêmio","Chapecoense","2026-08-30","18:30"],[25,"Athletico-PR","Fluminense","2026-08-30","11:00"],
+  [25,"Bahia","Internacional","2026-08-30","19:30"],[25,"Remo","Coritiba","2026-08-31","20:00"],
+  [26,"Fluminense","Vasco","2026-09-05","21:00"],[26,"Botafogo","Palmeiras","2026-09-06","18:30"],
+  [26,"São Paulo","Atlético-MG","2026-09-05","18:30"],[26,"Corinthians","Chapecoense","2026-09-06","19:30"],
+  [26,"Red Bull Bragantino","Bahia","2026-09-05","16:00"],[26,"Cruzeiro","Athletico-PR","2026-09-06","16:00"],
+  [26,"Internacional","Santos","2026-09-06","16:00"],[26,"Coritiba","Mirassol","2026-09-06","11:00"],
+  [26,"Vitória","Grêmio","2026-09-07","20:00"],[26,"Remo","Flamengo","2026-09-06","16:00"],
   [27,"Flamengo","Corinthians","2026-09-12"],[27,"Botafogo","Red Bull Bragantino","2026-09-13"],
   [27,"Santos","Cruzeiro","2026-09-12"],[27,"Palmeiras","São Paulo","2026-09-13"],
   [27,"Mirassol","Vitória","2026-09-12"],[27,"Atlético-MG","Fluminense","2026-09-12"],
@@ -378,7 +378,13 @@ export default function App() {
     if (!player || isAdmin) return;
     const saved = savedPreds[player.id];
     if (saved && Object.keys(saved).length > 0) {
-      setDraftPreds(saved);
+      setDraftPreds(prev => {
+        const merged = { ...prev, ...saved };
+        MATCHES.forEach(m => {
+          if (!isLocked(m) && prev[m.id] != null) merged[m.id] = prev[m.id];
+        });
+        return merged;
+      });
     }
   }, [savedPreds[player?.id]]);
 
@@ -399,8 +405,9 @@ export default function App() {
     today.setHours(0, 0, 0, 0);
     // Próxima rodada = primeira rodada cujo primeiro jogo tem data >= hoje
     const nextRound = ROUNDS.find(r => {
-      const firstDate = new Date(matchesByRound[r][0].date + "T12:00:00");
-      return firstDate >= today;
+      const dates = matchesByRound[r].map(m => m.date).filter(Boolean).sort();
+      if (!dates.length) return false;
+      return new Date(dates[0] + "T12:00:00") >= today;
     });
     const target = nextRound ?? 38;
     setActiveRound(target);
@@ -415,11 +422,14 @@ export default function App() {
     if (tab !== "admin" || !isAdmin) return;
     const today = new Date(); today.setHours(0,0,0,0);
     const hasToday = ROUNDS.find(r => matchesByRound[r].some(m => {
+      if (!m.date) return false;
       const d = new Date(m.date+"T12:00:00"); d.setHours(0,0,0,0);
       return d.getTime()===today.getTime();
     }));
     const nextRound = ROUNDS.find(r => {
-      const d = new Date(matchesByRound[r][0].date+"T12:00:00"); return d >= today;
+      const dates = matchesByRound[r].map(m => m.date).filter(Boolean).sort();
+      if (!dates.length) return false;
+      return new Date(dates[0]+"T12:00:00") >= today;
     });
     const target = hasToday ?? nextRound ?? 38;
     setActiveRound(target);
