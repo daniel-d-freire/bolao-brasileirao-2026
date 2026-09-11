@@ -1,0 +1,1 @@
+const fs=require('fs'); && echo const p='src/App.jsx'; && echo let c=fs.readFileSync(p,'utf8'); && echo c=c.replace('pr\u00F3ximas 2 horas','pr\u00F3ximas 6 horas'); && echo fs.writeFileSync(p,c,'utf8'); && echo console.log('OK');

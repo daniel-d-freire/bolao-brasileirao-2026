@@ -1,0 +1,10 @@
+const fs = require('fs');
+const publicDir = 'C:\\Users\\User\\bolao-brasileirao-2026\\public';
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+const p1 = require('./logo_p1.js');
+const p2 = require('./logo_p2.js');
+const p3 = require('./logo_p3.js');
+const p4 = require('./logo_p4.js');
+const buf = Buffer.from(p1+p2+p3+p4, 'base64');
+fs.writeFileSync(publicDir + '\\logo_brasileirao.png', buf);
+console.log('OK:', buf.length, 'bytes salvos em public/logo_brasileirao.png');
