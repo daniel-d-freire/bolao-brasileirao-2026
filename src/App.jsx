@@ -214,7 +214,7 @@ const RAW = [
   [30,"Flamengo","Fluminense","2026-10-11","17:30"],[30,"Vasco","Remo","2026-10-10","17:00"],
   [30,"São Paulo","Vitória","2026-10-10","21:00"],[30,"Palmeiras","Corinthians","2026-10-11","17:30"],
   [30,"Red Bull Bragantino","Cruzeiro","2026-10-12","21:00"],[30,"Atlético-MG","Santos","2026-10-11","16:00"],
-  [30,"Grêmio","Internacional","2026-10-11","17:30"],[30,"Coritiba","Botafogo","2026-10-11","19:30"],
+  [30,"Grêmio","Internacional","2026-10-11","17:30"],[30,"Coritiba","Botafogo","2026-10-12","16:00"],
   [30,"Bahia","Mirassol","2026-10-11","19:30"],[30,"Chapecoense","Athletico-PR","2026-10-12","19:30"],
   [31,"Fluminense","Santos","2026-10-17"],[31,"Botafogo","Chapecoense","2026-10-17"],
   [31,"São Paulo","Vasco","2026-10-17"],[31,"Corinthians","Vitória","2026-10-18"],
